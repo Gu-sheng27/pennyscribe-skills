@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -43,6 +44,8 @@ def validate(project: dict) -> list[str]:
     for index, quote in enumerate(digest.get("quotes") or [], 1):
         if quote.get("fidelity") not in {"verbatim", "lightly_edited", "paraphrased"}:
             errors.append(f"digest quote {index} has invalid fidelity")
+    if len(digest.get("quotes") or []) < 3:
+        errors.append("digest requires at least 3 quotes for the quote-list view")
     social_x = project.get("x") or {}
     check_refs(social_x.get("single_posts") or [], "X post")
     for index, thread in enumerate(social_x.get("threads") or [], 1):
@@ -57,13 +60,22 @@ def validate(project: dict) -> list[str]:
 
     xhs = project.get("xiaohongshu") or {}
     cards = xhs.get("cards") or []
+    titles = xhs.get("title_options") or []
+    if not titles or not str(titles[0]).strip():
+        errors.append("Xiaohongshu requires a primary title")
+    elif re.sub(r"\W+", "", str(titles[0])).casefold() == re.sub(r"\W+", "", str(source.get("title") or "")).casefold():
+        errors.append("Xiaohongshu primary title must not reuse the episode title")
     if not 4 <= len(cards) <= 8:
         errors.append(f"Xiaohongshu requires 4–8 cards; found {len(cards)}")
+    elif str(cards[0].get("kind") or "") != "cover":
+        errors.append("Xiaohongshu first card must be a cover")
+    for index, card in enumerate(cards[1:], 2):
+        if str(card.get("kind") or "") == "cover":
+            errors.append(f"Xiaohongshu card {index} must use a content-card kind")
     check_refs(cards, "Xiaohongshu card")
-    if source_url:
-        xhs_text = "\n".join([str(xhs.get("caption") or "")] + [f"{card.get('title', '')}\n{card.get('body', '')}" for card in cards])
-        if source_url not in xhs_text:
-            errors.append("Xiaohongshu caption or cards must contain the source URL")
+    xhs_text = "\n".join([*(str(title) for title in titles), str(xhs.get("caption") or "")] + [f"{card.get('title', '')}\n{card.get('body', '')}" for card in cards])
+    if re.search(r"(?:https?://|www\.)\S+", xhs_text, re.I):
+        errors.append("Xiaohongshu titles, caption, and cards must not contain URLs")
     return errors
 
 

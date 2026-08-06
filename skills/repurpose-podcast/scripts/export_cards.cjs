@@ -25,15 +25,17 @@ try { playwright = require('playwright'); } catch { fail('Playwright is required
   await page.evaluate(() => document.fonts.ready);
   await page.locator('[data-view="xhs"]').click();
   await page.evaluate(() => { document.body.style.paddingBottom = '800px'; });
-  const project = JSON.parse(await page.locator('#project-data').textContent());
   const cards = page.locator('.xhs-card');
   const count = await cards.count();
   if (count < 4 || count > 8) fail(`Xiaohongshu requires 4–8 cards; found ${count}`);
-  const sourceUrl = String(project.source?.url || '');
-  const sourceText = [project.xiaohongshu?.caption || '', ...(project.xiaohongshu?.cards || []).flatMap(card => [card.title || '', card.body || ''])].join('\n');
-  if (sourceUrl && !sourceText.includes(sourceUrl)) fail('Xiaohongshu caption or cards must contain the source URL');
   const overflow = await cards.evaluateAll(nodes => nodes.map((node, index) => ({ index, overflow: node.scrollHeight > node.clientHeight || node.scrollWidth > node.clientWidth })).filter(x => x.overflow));
   if (overflow.length) fail(`Card text overflow detected: ${overflow.map(x => x.index + 1).join(', ')}`);
+  const browserExportBytes = await page.evaluate(async () => {
+    if (typeof cardPng !== 'function') return 0;
+    const blob = await cardPng(0, false);
+    return blob?.size || 0;
+  });
+  if (browserExportBytes < 1000) fail('In-page PNG export did not produce a usable image');
   for (let index = 0; index < count; index += 1) {
     const card = cards.nth(index);
     await card.scrollIntoViewIfNeeded();

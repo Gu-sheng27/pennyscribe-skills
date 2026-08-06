@@ -68,14 +68,14 @@ class SkillScriptTests(unittest.TestCase):
         self.assertEqual(metadata["creator"], "Show")
         self.assertEqual(metadata["duration_seconds"], 123)
 
-    def test_builds_self_contained_workspace_with_four_views(self):
+    def test_builds_self_contained_workspace_with_five_views(self):
         project = {
             "schema_version": 1,
             "source": {"url": "https://example.com/episode", "platform": "test", "title": "A useful conversation", "creator": "Example Show", "cover": None},
             "transcript": {"raw": "第一段完整内容。第二段完整内容。", "readable": {"title": "整理后的全文", "dek": "导语", "sections": [{"id": "section-01", "heading": "开始", "paragraphs": [{"id": "p-001", "text": "第一段完整内容。", "source_start": 0, "source_end": 8}]}]}},
-            "digest": {"recommendation": "值得阅读", "summary": "摘要", "insights": [{"text": "观点", "source_paragraph_ids": ["p-001"]}], "quotes": [], "audience": ["创作者"]},
+            "digest": {"recommendation": "值得阅读", "summary": "摘要", "insights": [{"text": "观点", "source_paragraph_ids": ["p-001"]}], "quotes": [{"text": f"金句 {index}", "fidelity": "verbatim", "source_paragraph_ids": ["p-001"]} for index in range(1, 4)], "audience": ["创作者"]},
             "x": {"single_posts": [{"text": "一条 X https://example.com/episode", "source_paragraph_ids": ["p-001"]}], "threads": []},
-            "xiaohongshu": {"title_options": ["标题"], "caption": "文案 https://example.com/episode", "theme": "editorial-red", "cards": [{"kind": "cover", "eyebrow": "PODCAST NOTES", "title": f"封面标题 {index}", "body": "卡片正文", "source_paragraph_ids": ["p-001"]} for index in range(1, 5)]},
+            "xiaohongshu": {"title_options": ["更适合传播的新标题"], "caption": "第一段发布文案。\n\n第二段发布文案。", "theme": "editorial-red", "cards": [{"kind": "cover" if index == 1 else "insight", "eyebrow": "PODCAST NOTES", "title": f"卡片标题 {index}", "body": "卡片正文", "source_paragraph_ids": ["p-001"]} for index in range(1, 5)]},
         }
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "project.json"
@@ -84,12 +84,42 @@ class SkillScriptTests(unittest.TestCase):
             result = subprocess.run([sys.executable, str(SKILL / "scripts" / "build_workspace.py"), str(source), "--output", str(target)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             html = target.read_text(encoding="utf-8")
-            for text in ("导读与摘要", "阅读全文", "X 素材", "小红书素材", "第一段完整内容。", "封面标题"):
+            for text in ("导读与摘要", "金句", "阅读全文", "X 素材", "小红书素材", "第一段完整内容。", "卡片标题", "导出全部卡片", "复制文字"):
                 self.assertIn(text, html)
             self.assertNotIn("__PROJECT_DATA__", html)
 
             validation = subprocess.run([sys.executable, str(SKILL / "scripts" / "validate_project.py"), str(source)], capture_output=True, text=True)
             self.assertEqual(validation.returncode, 0, validation.stderr)
+
+    def test_builds_switchable_local_library(self):
+        def project(number):
+            return {
+                "schema_version": 1,
+                "source": {"url": f"https://example.com/episode-{number}", "platform": "test", "title": f"Episode {number}", "creator": "Example Show", "cover": None},
+                "transcript": {"raw": "完整内容。", "readable": {"title": f"Readable {number}", "dek": "导语", "sections": []}},
+                "digest": {"recommendation": "值得阅读", "summary": "摘要", "insights": [], "quotes": [], "audience": []},
+                "x": {"single_posts": [], "threads": []},
+                "xiaohongshu": {"title_options": [], "caption": "", "theme": "editorial-red", "cards": []},
+            }
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources = []
+            for number in (1, 2):
+                path = root / f"project-{number}.json"
+                path.write_text(json.dumps(project(number), ensure_ascii=False), encoding="utf-8")
+                sources.append(path)
+            output = root / "library"
+            result = subprocess.run([sys.executable, str(SKILL / "scripts" / "build_site.py"), *(str(path) for path in sources), "--output-dir", str(output)], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            index = (output / "index.html").read_text(encoding="utf-8")
+            self.assertIn("切换播客", index)
+            self.assertIn("Episode 1", index)
+            self.assertIn("Episode 2", index)
+            manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(len(manifest), 2)
+            for item in manifest:
+                self.assertTrue((output / item["file"]).exists())
 
     def test_acquires_and_normalizes_local_audio(self):
         with tempfile.TemporaryDirectory() as directory:

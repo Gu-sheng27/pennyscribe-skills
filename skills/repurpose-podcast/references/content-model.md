@@ -39,7 +39,7 @@ Use UTF-8 JSON. Preserve unknown optional values as `null`, not invented text.
     "recommendation": "One-sentence reason to read or listen",
     "summary": "Grounded summary",
     "insights": [{"text": "Insight", "source_paragraph_ids": ["p-001"]}],
-    "quotes": [{"text": "Quote", "fidelity": "verbatim", "source_paragraph_ids": ["p-001"]}],
+    "quotes": [{"text": "Standalone quotable line", "fidelity": "verbatim", "source_paragraph_ids": ["p-001"]}],
     "audience": ["Intended reader"]
   },
   "x": {
@@ -47,8 +47,8 @@ Use UTF-8 JSON. Preserve unknown optional values as `null`, not invented text.
     "threads": [[{"text": "Thread item", "source_paragraph_ids": ["p-001"]}]]
   },
   "xiaohongshu": {
-    "title_options": ["Title"],
-    "caption": "Caption",
+    "title_options": ["Platform-native title, not the episode title"],
+    "caption": "Link-free, paragraph-formatted caption",
     "theme": "editorial-red",
     "cards": [
       {"kind": "cover", "eyebrow": "PODCAST NOTES", "title": "Card title", "body": "", "source_paragraph_ids": []}
@@ -58,3 +58,5 @@ Use UTF-8 JSON. Preserve unknown optional values as `null`, not invented text.
 ```
 
 Keep stable section and paragraph IDs across editing. Use source character ranges when confidently available. Social outputs may cite multiple paragraph IDs. Never cite a nonexistent ID.
+
+Create at least three `digest.quotes` entries so the workspace can render a useful standalone quote list. Keep Xiaohongshu copy free of URLs; the source URL remains available elsewhere in the project and workspace.

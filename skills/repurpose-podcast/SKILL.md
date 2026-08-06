@@ -1,6 +1,6 @@
 ---
 name: repurpose-podcast
-description: Turn a public podcast or video episode into a readable, paragraph-structured full transcript, an editable self-contained HTML feature, X posts or threads, and exportable Xiaohongshu image cards. Use for YouTube, Apple Podcasts, Xiaoyuzhou, Bilibili, RSS, direct audio URLs, and local audio when the user asks to transcribe, summarize, organize, publish, or repurpose long-form audio.
+description: Turn public podcast or video episodes into readable full transcripts, quote lists, editable HTML publishing workspaces, X posts or threads, native Xiaohongshu copy and exportable image cards, plus a switchable local podcast library. Use for YouTube, Apple Podcasts, Xiaoyuzhou, Bilibili, RSS, direct audio URLs, and local audio when the user asks to transcribe, summarize, organize, publish, or repurpose long-form audio.
 ---
 
 # Repurpose Podcast
@@ -34,9 +34,9 @@ Treat public links as user-provided sources, not as permission to bypass authent
 
    Poll until terminal. Preserve the raw PennyScribe text exactly in `transcript.raw`.
 
-4. Read [references/content-model.md](references/content-model.md) and [references/transcript-editing.md](references/transcript-editing.md). Populate `transcript.readable`, `digest`, and provenance fields in `project.json`. Preserve all meaningful content in the readable transcript; do not turn it into a summary.
+4. Read [references/content-model.md](references/content-model.md) and [references/transcript-editing.md](references/transcript-editing.md). Populate `transcript.readable`, `digest`, including a useful quote list, and provenance fields in `project.json`. Preserve all meaningful content in the readable transcript; do not turn it into a summary.
 5. For X output, read [references/x-writing.md](references/x-writing.md). Generate separate `single_posts` and `threads`, always retaining the source episode URL.
-6. For Xiaohongshu output, read [references/xiaohongshu-writing.md](references/xiaohongshu-writing.md). Generate the title, caption, and 4–8 cards. Keep claims traceable to transcript paragraph IDs.
+6. For Xiaohongshu output, read [references/xiaohongshu-writing.md](references/xiaohongshu-writing.md). Generate platform-native title options, a link-free caption, and 4–8 cards. Do not reuse the episode title as the primary Xiaohongshu title. Keep claims traceable to transcript paragraph IDs.
 7. Validate grounding and publishing invariants:
 
    ```bash
@@ -60,15 +60,25 @@ Treat public links as user-provided sources, not as permission to bypass authent
 
    Install Playwright when unavailable. Export one 1080×1440 PNG per card and fail on text overflow.
 
+11. To collect one or more episodes into a switchable local website, build a library:
+
+   ```bash
+   python3 scripts/build_site.py "<project-a>/project.json" "<project-b>/project.json" \
+     --output-dir "<podcast-library>"
+   ```
+
+   Open `<podcast-library>/index.html` directly, or serve it with `python3 -m http.server --directory "<podcast-library>"`. Rebuild with all project JSON files whenever adding an episode.
+
 ## Output Rules
 
 - Deliver `index.html`, `project.json`, and exported assets requested by the user.
-- Keep four distinct views: digest, readable full transcript, X, and Xiaohongshu.
+- Keep five distinct views: digest, quote list, readable full transcript, X, and Xiaohongshu.
 - Mark uncertain names, numbers, brands, and terms with `〔疑似：…〕`; never silently repair them.
 - Label quotations as `verbatim`, `lightly_edited`, or `paraphrased`. Do not use quotation marks for paraphrases.
 - Do not invent speakers, timestamps, handles, endorsements, or episode facts.
 - Build semantic chapters without timestamps when the transcription has no timing data.
 - Prefer a few strong social posts over repetitive variants.
+- Never put the show or channel name in Xiaohongshu card artwork. Keep source attribution in metadata and the digest view.
 
 ## Acquisition Failures
 

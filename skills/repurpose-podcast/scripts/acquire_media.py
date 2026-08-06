@@ -142,12 +142,13 @@ def main() -> int:
         probe = run(base + ["--dump-single-json", args.source])
         info: dict[str, object] = {}
         acquired = False
+        acquired_path = media_path
         failure = probe.stderr.strip()
         if probe.returncode == 0:
             info = json.loads(probe.stdout)
-            download = run(base + ["-x", "--audio-format", "mp3", "--audio-quality", "5", "-o", str(output / "media.%(ext)s"), args.source])
-            acquired = download.returncode == 0 and media_path.exists()
-            failure = download.stderr.strip()
+            download_result = run(base + ["-x", "--audio-format", "mp3", "--audio-quality", "5", "-o", str(output / "media.%(ext)s"), args.source])
+            acquired = download_result.returncode == 0 and media_path.exists()
+            failure = download_result.stderr.strip()
 
         discovered: dict[str, object] = {}
         if not acquired:
@@ -162,8 +163,7 @@ def main() -> int:
                 suffix = Path(urllib.parse.urlparse(media_url).path).suffix or mimetypes.guess_extension("audio/mpeg") or ".bin"
                 temporary = output / f"download{suffix}"
                 download(media_url, temporary)
-                normalize(temporary, media_path)
-                temporary.unlink(missing_ok=True)
+                acquired_path = temporary
                 acquired = True
 
         if not acquired:
@@ -172,6 +172,12 @@ def main() -> int:
                 print(failure, file=sys.stderr)
             print("Provide a public RSS/direct audio URL or a local audio file. Authentication and DRM are not bypassed.", file=sys.stderr)
             return 2
+
+        normalized = output / "media.normalized.mp3"
+        normalize(acquired_path, normalized)
+        if acquired_path != media_path:
+            acquired_path.unlink(missing_ok=True)
+        normalized.replace(media_path)
 
         metadata = {
             "source_url": str(info.get("webpage_url") or info.get("original_url") or args.source),

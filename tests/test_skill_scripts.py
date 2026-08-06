@@ -20,6 +20,44 @@ def load_acquirer():
 
 
 class SkillScriptTests(unittest.TestCase):
+    def test_public_page_fallback_downloads_and_normalizes_once(self):
+        module = load_acquirer()
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "source"
+
+            def fake_download(_url, target):
+                target.write_bytes(b"original-audio")
+
+            def fake_normalize(source, target):
+                self.assertEqual(source.read_bytes(), b"original-audio")
+                target.write_bytes(b"normalized-audio")
+
+            argv = [
+                "acquire_media.py",
+                "https://www.xiaoyuzhoufm.com/episode/example",
+                "--output-dir",
+                str(output),
+            ]
+            failed_probe = subprocess.CompletedProcess([], 1, "", "unsupported")
+            with (
+                mock.patch.object(module.shutil, "which", return_value="/usr/bin/tool"),
+                mock.patch.object(module, "run", return_value=failed_probe),
+                mock.patch.object(module, "apple_episode", return_value=(None, {})),
+                mock.patch.object(module, "page_media", return_value=("https://cdn.example.com/episode.mp3", {"title": "Episode"})),
+                mock.patch.object(module, "download", side_effect=fake_download) as downloader,
+                mock.patch.object(module, "normalize", side_effect=fake_normalize) as normalizer,
+                mock.patch.object(sys, "argv", argv),
+            ):
+                self.assertEqual(module.main(), 0)
+
+            downloader.assert_called_once()
+            normalizer.assert_called_once()
+            self.assertEqual((output / "media.mp3").read_bytes(), b"normalized-audio")
+            self.assertFalse((output / "download.mp3").exists())
+            metadata = json.loads((output / "metadata.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["platform"], "xiaoyuzhou")
+            self.assertEqual(metadata["title"], "Episode")
+
     def test_resolves_apple_episode_with_public_lookup_metadata(self):
         module = load_acquirer()
         payload = {"results": [{"trackId": 456, "episodeUrl": "https://cdn.example.com/episode.mp3", "trackName": "Episode", "collectionName": "Show", "trackTimeMillis": 123000}]}

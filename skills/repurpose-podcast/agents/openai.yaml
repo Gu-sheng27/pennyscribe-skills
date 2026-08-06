@@ -1,0 +1,4 @@
+interface:
+  display_name: "Repurpose Podcast"
+  short_description: "Turn public podcast links into editable publishing assets"
+  default_prompt: "Use $repurpose-podcast to turn this public podcast link into a readable transcript, an HTML feature, X copy, and Xiaohongshu cards."

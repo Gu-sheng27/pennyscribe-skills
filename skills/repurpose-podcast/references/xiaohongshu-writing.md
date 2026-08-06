@@ -24,18 +24,20 @@ Avoid clickbait that overstates the transcript. Give each content card enough co
 
 ## Themes
 
-- `editorial-red`: red, black, and warm paper; Chinese editorial character.
-- `cream-notes`: cream paper, annotations, calm lifestyle tone.
-- `neo-brutal`: bold high-contrast blocks for technology and business.
-- `dark-cinema`: dark photographic treatment for interviews and profiles.
+The built-in themes translate four reusable UI systems into static social cards. They are inspired by design principles rather than pixel copies of reference sites:
 
-Choose one theme based on tone. Do not mix themes within a set. Use the episode cover only when it is available and legally exposed by the source page. Never imply AI-generated decoration is an original episode image.
+- `magazine-editorial` (default): asymmetric editorial grid, serif display type, rules, folios, warm paper, and one vermilion accent. Best for interviews, ideas, culture, and business analysis.
+- `typography-poster`: oversized type is the artwork, mixing solid and outlined letterforms with stark contrast. Best for provocative theses and memorable quotes.
+- `flat-information`: pure solid colors, simple geometry, no gradient or shadow, and hierarchy built with blocks and whitespace. Best for technology, frameworks, and practical explainers.
+- `fluent-glass`: soft gradient field, translucent acrylic planes, rounded geometry, and restrained depth. Best for AI, future-facing topics, and a polished modern tone.
+
+Choose one theme based on tone and keep it consistent within a set. `magazine-editorial` is the safest content-first default for dense three-paragraph cards. Do not use interaction-led UI styles for exported images. Use the episode cover only when it is available and legally exposed by the source page. Never imply AI-generated decoration is an original episode image.
 
 ## Card system
 
 - Use a 3:4 canvas at 1080×1440 export resolution with generous safe margins.
 - Give the cover oversized display type, a short supporting hook, stronger contrast, and a distinctive visual device. Do not make it look like content card 1.
-- Give content cards a stable grid: sequence label, one concise idea, supporting copy, and page number. Keep one idea per card.
+- Give content cards a stable grid: sequence label, one concise idea, three visibly separated supporting paragraphs, and page number. Keep one idea per card.
 - Write every non-cover card as exactly three short paragraphs totaling roughly 80–130 Chinese characters: lead with the conclusion, add transcript-grounded evidence or context, then explain the consequence, tension, or open question. Separate paragraphs with blank lines.
 - Keep titles short enough to avoid dense line breaks. Prefer 2–4 lines on the cover and 2–3 lines on content cards.
 - Do not show the podcast channel, show name, creator, URL, or generic watermark on card artwork.

@@ -90,7 +90,7 @@ def main() -> int:
         "transcript": {"raw": raw, "readable": {"title": metadata.get("title") or "阅读全文", "dek": "", "sections": []}},
         "digest": {"recommendation": "", "summary": "", "insights": [], "quotes": [], "audience": []},
         "x": {"single_posts": [], "threads": []},
-        "xiaohongshu": {"title_options": [], "caption": "", "theme": "editorial-red", "cards": []},
+        "xiaohongshu": {"title_options": [], "caption": "", "theme": "magazine-editorial", "cards": []},
         "pennyscribe": {"transcription_id": job_id, "language_code": job.get("language_code"), "language": job.get("language")},
     }
     output = Path(args.output).resolve()

@@ -49,7 +49,7 @@ Use UTF-8 JSON. Preserve unknown optional values as `null`, not invented text.
   "xiaohongshu": {
     "title_options": ["Platform-native title, not the episode title"],
     "caption": "Link-free, paragraph-formatted caption",
-    "theme": "editorial-red",
+    "theme": "magazine-editorial",
     "cards": [
       {"kind": "cover", "eyebrow": "PODCAST NOTES", "title": "Card title", "body": "", "source_paragraph_ids": []}
     ]

@@ -29,7 +29,15 @@ def main() -> int:
     readable = project.setdefault("transcript", {}).setdefault("readable", {})
     if not readable.get("sections"):
         readable["sections"] = fallback_sections(str(project["transcript"].get("raw") or ""))
-    project.setdefault("xiaohongshu", {}).setdefault("theme", "editorial-red")
+    xiaohongshu = project.setdefault("xiaohongshu", {})
+    theme_aliases = {
+        "editorial-red": "magazine-editorial",
+        "cream-notes": "magazine-editorial",
+        "neo-brutal": "flat-information",
+        "dark-cinema": "typography-poster",
+    }
+    theme = xiaohongshu.setdefault("theme", "magazine-editorial")
+    xiaohongshu["theme"] = theme_aliases.get(theme, theme)
     template = (Path(__file__).resolve().parent.parent / "assets" / "workspace.html").read_text(encoding="utf-8")
     payload = json.dumps(project, ensure_ascii=False).replace("</", "<\\/")
     if "__PROJECT_DATA__" not in template:

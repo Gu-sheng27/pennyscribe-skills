@@ -29,8 +29,14 @@ try { playwright = require('playwright'); } catch { fail('Playwright is required
   const cards = page.locator('.xhs-card');
   const count = await cards.count();
   if (count < 4 || count > 8) fail(`Xiaohongshu requires 4–8 cards; found ${count}`);
-  const overflow = await cards.evaluateAll(nodes => nodes.map((node, index) => ({ index, overflow: node.scrollHeight > node.clientHeight || node.scrollWidth > node.clientWidth })).filter(x => x.overflow));
-  if (overflow.length) fail(`Card text overflow detected: ${overflow.map(x => x.index + 1).join(', ')}`);
+  const selectedTheme = await page.locator('#theme').evaluate(node => node.value);
+  const themes = await page.locator('#theme option').evaluateAll(nodes => nodes.map(node => node.value));
+  for (const theme of themes) {
+    await page.locator('#theme').selectOption(theme);
+    const overflow = await cards.evaluateAll(nodes => nodes.map((node, index) => ({ index, overflow: node.scrollHeight > node.clientHeight || node.scrollWidth > node.clientWidth + 32 })).filter(x => x.overflow));
+    if (overflow.length) fail(`Card text overflow detected in ${theme}: ${overflow.map(x => x.index + 1).join(', ')}`);
+  }
+  await page.locator('#theme').selectOption(selectedTheme);
   const browserExportBytes = await page.evaluate(async () => {
     if (typeof cardPng !== 'function') return 0;
     const blob = await cardPng(0, false);

@@ -67,7 +67,13 @@ Treat public links as user-provided sources, not as permission to bypass authent
      --output-dir "<podcast-library>"
    ```
 
-   Open `<podcast-library>/index.html` directly, or serve it with `python3 -m http.server --directory "<podcast-library>"`. Rebuild with all project JSON files whenever adding an episode.
+   Rebuild with all project JSON files whenever adding an episode. Start the bundled local preview server:
+
+   ```bash
+   python3 scripts/serve_site.py "<podcast-library>" --port 8000
+   ```
+
+   Open the printed loopback URL. Use `--open` when opening the user's default browser is appropriate.
 
 ## Output Rules
 

@@ -24,6 +24,7 @@ try { playwright = require('playwright'); } catch { fail('Playwright is required
   await page.goto(pathToFileURL(html).href, { waitUntil: 'load' });
   await page.evaluate(() => document.fonts.ready);
   await page.locator('[data-view="xhs"]').click();
+  await page.locator('[data-xhs-tab="cards"]').click();
   await page.evaluate(() => { document.body.style.paddingBottom = '800px'; });
   const cards = page.locator('.xhs-card');
   const count = await cards.count();

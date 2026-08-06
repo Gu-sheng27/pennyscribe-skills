@@ -1,8 +1,10 @@
 import json
+import http.client
 import importlib.util
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -14,6 +16,13 @@ SKILL = ROOT / "skills" / "repurpose-podcast"
 
 def load_acquirer():
     spec = importlib.util.spec_from_file_location("acquire_media", SKILL / "scripts" / "acquire_media.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_preview_server():
+    spec = importlib.util.spec_from_file_location("serve_site", SKILL / "scripts" / "serve_site.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -75,7 +84,7 @@ class SkillScriptTests(unittest.TestCase):
             "transcript": {"raw": "第一段完整内容。第二段完整内容。", "readable": {"title": "整理后的全文", "dek": "导语", "sections": [{"id": "section-01", "heading": "开始", "paragraphs": [{"id": "p-001", "text": "第一段完整内容。", "source_start": 0, "source_end": 8}]}]}},
             "digest": {"recommendation": "值得阅读", "summary": "摘要", "insights": [{"text": "观点", "source_paragraph_ids": ["p-001"]}], "quotes": [{"text": f"金句 {index}", "fidelity": "verbatim", "source_paragraph_ids": ["p-001"]} for index in range(1, 4)], "audience": ["创作者"]},
             "x": {"single_posts": [{"text": "一条 X https://example.com/episode", "source_paragraph_ids": ["p-001"]}], "threads": []},
-            "xiaohongshu": {"title_options": ["更适合传播的新标题"], "caption": "第一段发布文案。\n\n第二段发布文案。", "theme": "editorial-red", "cards": [{"kind": "cover" if index == 1 else "insight", "eyebrow": "PODCAST NOTES", "title": f"卡片标题 {index}", "body": "卡片正文", "source_paragraph_ids": ["p-001"]} for index in range(1, 5)]},
+            "xiaohongshu": {"title_options": ["更适合传播的新标题"], "caption": "第一段发布文案。\n\n第二段发布文案。", "theme": "editorial-red", "cards": [{"kind": "cover" if index == 1 else "insight", "eyebrow": "PODCAST NOTES", "title": f"卡片标题 {index}", "body": "封面钩子" if index == 1 else "这是一段信息更完整的内容卡片正文，用来解释核心观察、补充必要背景，并说明这个观点为什么值得读者继续关注和思考。", "source_paragraph_ids": ["p-001"]} for index in range(1, 5)]},
         }
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "project.json"
@@ -84,7 +93,7 @@ class SkillScriptTests(unittest.TestCase):
             result = subprocess.run([sys.executable, str(SKILL / "scripts" / "build_workspace.py"), str(source), "--output", str(target)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             html = target.read_text(encoding="utf-8")
-            for text in ("导读与摘要", "金句", "阅读全文", "X 素材", "小红书素材", "第一段完整内容。", "卡片标题", "导出全部卡片", "复制文字"):
+            for text in ("导读与摘要", "金句", "阅读全文", "X 素材", "小红书素材", "标题与文案", "卡片编辑", "第一段完整内容。", "卡片标题", "导出全部卡片", "复制文字"):
                 self.assertIn(text, html)
             self.assertNotIn("__PROJECT_DATA__", html)
 
@@ -120,6 +129,28 @@ class SkillScriptTests(unittest.TestCase):
             self.assertEqual(len(manifest), 2)
             for item in manifest:
                 self.assertTrue((output / item["file"]).exists())
+
+    def test_serves_generated_library_on_loopback(self):
+        module = load_preview_server()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "index.html").write_text("<h1>Podcast Library</h1>", encoding="utf-8")
+            server = module.make_server(root, "127.0.0.1", 0)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                port = server.server_address[1]
+                connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+                connection.request("GET", "/")
+                response = connection.getresponse()
+                self.assertEqual(response.status, 200)
+                self.assertIn(b"Podcast Library", response.read())
+                self.assertEqual(response.headers["Cache-Control"], "no-store")
+                connection.close()
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=3)
 
     def test_acquires_and_normalizes_local_audio(self):
         with tempfile.TemporaryDirectory() as directory:

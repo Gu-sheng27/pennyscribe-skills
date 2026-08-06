@@ -72,6 +72,9 @@ def validate(project: dict) -> list[str]:
     for index, card in enumerate(cards[1:], 2):
         if str(card.get("kind") or "") == "cover":
             errors.append(f"Xiaohongshu card {index} must use a content-card kind")
+        body_length = len(re.sub(r"\s+", "", str(card.get("body") or "")))
+        if body_length < 55:
+            errors.append(f"Xiaohongshu content card {index} body is too sparse ({body_length} characters; expected at least 55)")
     check_refs(cards, "Xiaohongshu card")
     xhs_text = "\n".join([*(str(title) for title in titles), str(xhs.get("caption") or "")] + [f"{card.get('title', '')}\n{card.get('body', '')}" for card in cards])
     if re.search(r"(?:https?://|www\.)\S+", xhs_text, re.I):

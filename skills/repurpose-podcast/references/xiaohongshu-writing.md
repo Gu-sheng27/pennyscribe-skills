@@ -20,7 +20,7 @@ Use this sequence when it fits the episode:
 5. Practical takeaway.
 6. Closing card with a takeaway, question, or listening invitation.
 
-Avoid clickbait that overstates the transcript. Keep card body copy short enough to breathe. Put longer nuance in the caption.
+Avoid clickbait that overstates the transcript. Give each content card enough context to stand alone without turning it into a wall of text. Put longer nuance in the caption.
 
 ## Themes
 
@@ -36,6 +36,7 @@ Choose one theme based on tone. Do not mix themes within a set. Use the episode 
 - Use a 3:4 canvas at 1080×1440 export resolution with generous safe margins.
 - Give the cover oversized display type, a short supporting hook, stronger contrast, and a distinctive visual device. Do not make it look like content card 1.
 - Give content cards a stable grid: sequence label, one concise idea, supporting copy, and page number. Keep one idea per card.
+- Write roughly 55–110 Chinese characters of supporting copy for each non-cover card. Use two short paragraphs when it improves rhythm: first explain the observation, then add its consequence or tension.
 - Keep titles short enough to avoid dense line breaks. Prefer 2–4 lines on the cover and 2–3 lines on content cards.
 - Do not show the podcast channel, show name, creator, URL, or generic watermark on card artwork.
 - Use typography, rules, shapes, and whitespace intentionally. Avoid decorative clutter and tiny body text.

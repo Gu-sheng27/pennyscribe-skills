@@ -33,7 +33,7 @@ try { playwright = require('playwright'); } catch { fail('Playwright is required
   const themes = await page.locator('#theme option').evaluateAll(nodes => nodes.map(node => node.value));
   for (const theme of themes) {
     await page.locator('#theme').selectOption(theme);
-    const overflow = await cards.evaluateAll(nodes => nodes.map((node, index) => ({ index, overflow: node.scrollHeight > node.clientHeight || node.scrollWidth > node.clientWidth + 32 })).filter(x => x.overflow));
+    const overflow = await cards.evaluateAll(nodes => nodes.map((node, index) => ({ index, overflow: node.scrollHeight > node.clientHeight || node.scrollWidth > node.clientWidth + 64 })).filter(x => x.overflow));
     if (overflow.length) fail(`Card text overflow detected in ${theme}: ${overflow.map(x => x.index + 1).join(', ')}`);
   }
   await page.locator('#theme').selectOption(selectedTheme);

@@ -31,12 +31,16 @@ def main() -> int:
         readable["sections"] = fallback_sections(str(project["transcript"].get("raw") or ""))
     xiaohongshu = project.setdefault("xiaohongshu", {})
     theme_aliases = {
-        "editorial-red": "magazine-editorial",
-        "cream-notes": "magazine-editorial",
-        "neo-brutal": "flat-information",
-        "dark-cinema": "typography-poster",
+        "editorial-red": "layout-magazine",
+        "cream-notes": "visual-hand-drawn",
+        "neo-brutal": "visual-neo-brutalism",
+        "dark-cinema": "retro-futurism",
+        "magazine-editorial": "layout-magazine",
+        "typography-poster": "visual-comic-book",
+        "flat-information": "core-flat-design",
+        "fluent-glass": "retro-futurism",
     }
-    theme = xiaohongshu.setdefault("theme", "magazine-editorial")
+    theme = xiaohongshu.setdefault("theme", "layout-magazine")
     xiaohongshu["theme"] = theme_aliases.get(theme, theme)
     template = (Path(__file__).resolve().parent.parent / "assets" / "workspace.html").read_text(encoding="utf-8")
     payload = json.dumps(project, ensure_ascii=False).replace("</", "<\\/")

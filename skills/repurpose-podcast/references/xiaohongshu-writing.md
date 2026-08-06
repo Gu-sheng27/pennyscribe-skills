@@ -24,14 +24,20 @@ Avoid clickbait that overstates the transcript. Give each content card enough co
 
 ## Themes
 
-The built-in themes translate four reusable UI systems into static social cards. They are inspired by design principles rather than pixel copies of reference sites:
+The built-in themes translate ten reusable design languages into static social cards. Use their principles rather than copying a reference layout pixel for pixel:
 
-- `magazine-editorial` (default): asymmetric editorial grid, serif display type, rules, folios, warm paper, and one vermilion accent. Best for interviews, ideas, culture, and business analysis.
-- `typography-poster`: oversized type is the artwork, mixing solid and outlined letterforms with stark contrast. Best for provocative theses and memorable quotes.
-- `flat-information`: pure solid colors, simple geometry, no gradient or shadow, and hierarchy built with blocks and whitespace. Best for technology, frameworks, and practical explainers.
-- `fluent-glass`: soft gradient field, translucent acrylic planes, rounded geometry, and restrained depth. Best for AI, future-facing topics, and a polished modern tone.
+- `visual-hand-drawn`: grid paper, imperfect ink lines, pastel sticky notes, and hard paper shadows. Best for learning, creativity, and personal knowledge.
+- `visual-neo-brutalism`: thick black outlines, saturated candy colors, and clearly offset shadows. Best for bold opinions, startups, and creator content.
+- `visual-paper-cutout`: layered irregular paper shapes, warm pastel color, and soft downward shadows. Best for culture, education, and human stories.
+- `retro-mid-century`: warm beige, orange, mustard, olive, organic geometry, and atomic-age motifs. Best for lifestyle, history, and optimistic narratives.
+- `visual-accessibility`: maximum contrast, large readable type, explicit borders, and redundant numbered structure. Best for dense explainers and broad audiences.
+- `visual-comic-book`: irregular panels, heavy black contours, halftone dots, action shapes, and dramatic display type. Best for energetic stories and surprising arguments.
+- `retro-bauhaus`: primary colors, exact geometry, asymmetric balance, and functional sans-serif type. Best for design, systems, and conceptual content.
+- `layout-magazine` (default): editorial grid, serif headline, rules, folios, warm paper, and one vermilion accent. Best for interviews, ideas, culture, and business analysis.
+- `retro-futurism`: deep-space navy, cyan and magenta neon, perspective grids, and glowing wireframes. Best for AI, science, and future-facing topics.
+- `core-flat-design`: pure color planes, simple geometry, no material texture, and hierarchy built with size, color, and whitespace. Best for frameworks and practical explainers.
 
-Choose one theme based on tone and keep it consistent within a set. `magazine-editorial` is the safest content-first default for dense three-paragraph cards. Do not use interaction-led UI styles for exported images. Use the episode cover only when it is available and legally exposed by the source page. Never imply AI-generated decoration is an original episode image.
+Choose one theme based on tone and keep it consistent within a set. `layout-magazine` is the safest content-first default for dense three-paragraph cards; `visual-accessibility` is the safest maximum-readability option. Do not use interaction-led UI styles for exported images. Use the episode cover only when it is available and legally exposed by the source page. Never imply AI-generated decoration is an original episode image.
 
 ## Card system
 

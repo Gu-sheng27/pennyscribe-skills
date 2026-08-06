@@ -43,6 +43,14 @@ try { playwright = require('playwright'); } catch { fail('Playwright is required
     return blob?.size || 0;
   });
   if (browserExportBytes < 1000) fail('In-page PNG export did not produce a usable image');
+  const browserZip = await page.evaluate(async () => {
+    if (typeof cardPng !== 'function' || typeof zipFiles !== 'function') return { size: 0, signature: '' };
+    const blob = await cardPng(0, false);
+    const archive = await zipFiles([{ name: 'xiaohongshu-01.png', blob }]);
+    const signature = [...new Uint8Array(await archive.slice(0, 4).arrayBuffer())].map(byte => byte.toString(16).padStart(2, '0')).join('');
+    return { size: archive.size, signature };
+  });
+  if (browserZip.size <= browserExportBytes || browserZip.signature !== '504b0304') fail('In-page ZIP export did not produce a valid archive');
   for (let index = 0; index < count; index += 1) {
     const card = cards.nth(index);
     await card.scrollIntoViewIfNeeded();

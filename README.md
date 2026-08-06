@@ -2,6 +2,10 @@
 
 一组基于 [PennyScribe](https://pennyscribe.com) 的开源 Agent Skills，帮助你把播客和视频整理成更适合阅读、收藏和发布的内容。
 
+**在线 Demo：[https://pennyscribe-skills-demo.pages.dev](https://pennyscribe-skills-demo.pages.dev)**
+
+Demo 使用一集公开播客展示完整效果，无需 API Key。你可以查看分段全文、摘要、金句、X 素材和小红书卡片，并切换 10 种卡片风格。页面修改只保留在当前浏览器中，不会写回服务器。
+
 目前包含：
 
 - [`repurpose-podcast`](skills/repurpose-podcast)：输入一个公开播客或视频链接，生成分段全文、摘要、金句、X 文案、小红书文案和可导出的图片卡片。

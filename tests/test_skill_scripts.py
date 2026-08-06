@@ -133,6 +133,8 @@ class SkillScriptTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             index = (output / "index.html").read_text(encoding="utf-8")
             self.assertIn("切换播客", index)
+            self.assertIn("在 GitHub 获取 Skill", index)
+            self.assertIn("https://github.com/YeDaxia/pennyscribe-skills/tree/main/skills/repurpose-podcast", index)
             self.assertIn("Episode 1", index)
             self.assertIn("Episode 2", index)
             manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))

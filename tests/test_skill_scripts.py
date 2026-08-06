@@ -84,7 +84,7 @@ class SkillScriptTests(unittest.TestCase):
             "transcript": {"raw": "第一段完整内容。第二段完整内容。", "readable": {"title": "整理后的全文", "dek": "导语", "sections": [{"id": "section-01", "heading": "开始", "paragraphs": [{"id": "p-001", "text": "第一段完整内容。", "source_start": 0, "source_end": 8}]}]}},
             "digest": {"recommendation": "值得阅读", "summary": "摘要", "insights": [{"text": "观点", "source_paragraph_ids": ["p-001"]}], "quotes": [{"text": f"金句 {index}", "fidelity": "verbatim", "source_paragraph_ids": ["p-001"]} for index in range(1, 4)], "audience": ["创作者"]},
             "x": {"single_posts": [{"text": "一条 X https://example.com/episode", "source_paragraph_ids": ["p-001"]}], "threads": []},
-            "xiaohongshu": {"title_options": ["更适合传播的新标题"], "caption": "第一段发布文案。\n\n第二段发布文案。", "theme": "editorial-red", "cards": [{"kind": "cover" if index == 1 else "insight", "eyebrow": "PODCAST NOTES", "title": f"卡片标题 {index}", "body": "封面钩子" if index == 1 else "这是一段信息更完整的内容卡片正文，用来解释核心观察、补充必要背景，并说明这个观点为什么值得读者继续关注和思考。", "source_paragraph_ids": ["p-001"]} for index in range(1, 5)]},
+            "xiaohongshu": {"title_options": ["更适合传播的新标题"], "caption": "第一段发布文案。\n\n第二段发布文案。", "theme": "editorial-red", "cards": [{"kind": "cover" if index == 1 else "insight", "eyebrow": "PODCAST NOTES", "title": f"卡片标题 {index}", "body": "封面钩子" if index == 1 else "先用第一段明确说出这张内容卡最值得记住的核心结论，让读者立即理解主题。\n\n第二段补充来自播客全文的关键事实、必要背景和具体例子，让这个判断拥有可靠依据。\n\n第三段进一步解释这件事带来的影响、现实张力或仍待回答的问题，让卡片能够独立成立。", "source_paragraph_ids": ["p-001"]} for index in range(1, 5)]},
         }
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "project.json"
@@ -99,6 +99,13 @@ class SkillScriptTests(unittest.TestCase):
 
             validation = subprocess.run([sys.executable, str(SKILL / "scripts" / "validate_project.py"), str(source)], capture_output=True, text=True)
             self.assertEqual(validation.returncode, 0, validation.stderr)
+
+            invalid = json.loads(json.dumps(project, ensure_ascii=False))
+            invalid["xiaohongshu"]["cards"][1]["body"] = "第一段保留足够多的具体信息，用于验证失败原因来自段落数量而不是正文长度。\n\n第二段同样写得足够完整，但整张卡仍然只有两个段落，因此必须被三段式规则拒绝。"
+            source.write_text(json.dumps(invalid, ensure_ascii=False), encoding="utf-8")
+            validation = subprocess.run([sys.executable, str(SKILL / "scripts" / "validate_project.py"), str(source)], capture_output=True, text=True)
+            self.assertEqual(validation.returncode, 2)
+            self.assertIn("must contain exactly 3 body paragraphs", validation.stderr)
 
     def test_builds_switchable_local_library(self):
         def project(number):

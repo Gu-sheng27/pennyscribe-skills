@@ -9,8 +9,6 @@ import os
 import subprocess
 import sys
 import time
-import urllib.error
-import urllib.request
 from pathlib import Path
 
 
@@ -23,9 +21,18 @@ def curl_quote(value: str) -> str:
 
 
 def request_json(url: str, key: str) -> dict:
-    request = urllib.request.Request(url, headers={"Authorization": f"Bearer {key}"})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return json.load(response)
+    config = "\n".join([
+        f'url = "{curl_quote(url)}"',
+        'silent',
+        'show-error',
+        'fail-with-body',
+        f'header = "Authorization: Bearer {curl_quote(key)}"',
+    ]) + "\n"
+    response = subprocess.run(["curl", "--config", "-"], input=config, text=True, capture_output=True, check=False)
+    if response.returncode:
+        detail = response.stdout.strip() or response.stderr.strip()
+        raise RuntimeError(detail or "request failed")
+    return json.loads(response.stdout)
 
 
 def main() -> int:
@@ -59,8 +66,8 @@ def main() -> int:
     while True:
         try:
             job = request_json(f"{API}/{job_id}", key)
-        except urllib.error.HTTPError as exc:
-            print(f"PennyScribe polling failed: HTTP {exc.code}", file=sys.stderr)
+        except (RuntimeError, json.JSONDecodeError) as exc:
+            print(f"PennyScribe polling failed: {exc}", file=sys.stderr)
             return 2
         state = str(job.get("state") or "")
         if state in TERMINAL:

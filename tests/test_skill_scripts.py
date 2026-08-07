@@ -77,6 +77,105 @@ class SkillScriptTests(unittest.TestCase):
         self.assertEqual(metadata["creator"], "Show")
         self.assertEqual(metadata["duration_seconds"], 123)
 
+    def test_prefers_source_language_manual_youtube_subtitles_without_audio(self):
+        module = load_acquirer()
+        info = {
+            "webpage_url": "https://www.youtube.com/watch?v=example",
+            "extractor_key": "Youtube",
+            "title": "有人工字幕的视频",
+            "channel": "Example Channel",
+            "language": "zh-Hans",
+            "subtitles": {
+                "zh-Hans": [{"ext": "json3", "url": "https://captions.example/manual?lang=zh-Hans"}],
+                "en": [{"ext": "json3", "url": "https://captions.example/manual?lang=zh-Hans&tlang=en"}],
+            },
+            "automatic_captions": {
+                "zh": [{"ext": "json3", "url": "https://captions.example/auto?lang=zh"}],
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "source"
+
+            def fake_download(url, target):
+                self.assertEqual(url, "https://captions.example/manual?lang=zh-Hans")
+                target.write_text(json.dumps({"events": [{"segs": [{"utf8": "第一句人工字幕。"}]}, {"segs": [{"utf8": "第二句人工字幕。"}]}]}), encoding="utf-8")
+
+            argv = ["acquire_media.py", info["webpage_url"], "--output-dir", str(output)]
+            probe = subprocess.CompletedProcess([], 0, json.dumps(info), "")
+            with (
+                mock.patch.object(module.shutil, "which", return_value="/usr/bin/tool"),
+                mock.patch.object(module, "run", return_value=probe) as runner,
+                mock.patch.object(module, "download", side_effect=fake_download),
+                mock.patch.object(module, "normalize") as normalizer,
+                mock.patch.object(sys, "argv", argv),
+            ):
+                self.assertEqual(module.main(), 0)
+
+            runner.assert_called_once()
+            normalizer.assert_not_called()
+            self.assertFalse((output / "media.mp3").exists())
+            self.assertEqual((output / "transcript.txt").read_text(encoding="utf-8"), "第一句人工字幕。\n第二句人工字幕。\n")
+            metadata = json.loads((output / "metadata.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["transcript_source"], "youtube-manual-subtitles")
+            self.assertEqual(metadata["transcript_language"], "zh-Hans")
+
+    def test_uses_source_language_auto_caption_and_rejects_translations(self):
+        module = load_acquirer()
+        selected = module.choose_youtube_caption({
+            "language": "ja",
+            "subtitles": {
+                "en": [{"ext": "json3", "url": "https://captions.example/manual?lang=ja&tlang=en"}],
+            },
+            "automatic_captions": {
+                "ja-orig": [{"ext": "json3", "url": "https://captions.example/auto?lang=ja"}],
+                "zh-Hans": [{"ext": "json3", "url": "https://captions.example/auto?lang=ja&tlang=zh-Hans"}],
+            },
+        })
+        self.assertIsNotNone(selected)
+        self.assertEqual(selected["kind"], "automatic")
+        self.assertEqual(selected["language"], "ja-orig")
+        self.assertNotIn("tlang", selected["format"]["url"])
+
+    def test_uses_default_manual_track_when_youtube_omits_language(self):
+        module = load_acquirer()
+        selected = module.choose_youtube_caption({
+            "language": None,
+            "subtitles": {
+                "en": [{"ext": "json3", "url": "https://captions.example/manual?lang=en"}],
+                "de": [{"ext": "json3", "url": "https://captions.example/manual?lang=de"}],
+            },
+            "automatic_captions": {},
+        })
+        self.assertIsNotNone(selected)
+        self.assertEqual(selected["kind"], "manual")
+        self.assertEqual(selected["language"], "en")
+
+    def test_initializes_project_from_youtube_subtitles_without_api_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            transcript = root / "transcript.txt"
+            metadata = root / "metadata.json"
+            output = root / "project.json"
+            transcript.write_text("原语言字幕第一段。\n原语言字幕第二段。\n", encoding="utf-8")
+            metadata.write_text(json.dumps({
+                "source_url": "https://www.youtube.com/watch?v=example",
+                "platform": "youtube",
+                "title": "字幕视频",
+                "creator": "Example Channel",
+                "transcript_source": "youtube-automatic-subtitles",
+                "transcript_language": "zh-Hans",
+            }, ensure_ascii=False), encoding="utf-8")
+            result = subprocess.run([
+                sys.executable, str(SKILL / "scripts" / "transcribe.py"),
+                "--transcript", str(transcript), "--metadata", str(metadata), "--output", str(output),
+            ], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            project = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(project["transcript"]["raw"], "原语言字幕第一段。\n原语言字幕第二段。")
+            self.assertEqual(project["transcript"]["source"], "youtube-automatic-subtitles")
+            self.assertEqual(project["transcript"]["language"], "zh-Hans")
+            self.assertNotIn("pennyscribe", project)
+
     def test_builds_self_contained_workspace_with_five_views(self):
         project = {
             "schema_version": 1,

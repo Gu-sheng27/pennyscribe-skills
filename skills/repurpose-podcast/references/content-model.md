@@ -15,7 +15,9 @@ Use UTF-8 JSON. Preserve unknown optional values as `null`, not invented text.
     "cover": null
   },
   "transcript": {
-    "raw": "Exact PennyScribe result",
+    "raw": "Exact extracted subtitle or PennyScribe result",
+    "source": "youtube-manual-subtitles",
+    "language": "zh-Hans",
     "readable": {
       "title": "Readable feature title",
       "dek": "Optional introduction",

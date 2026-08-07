@@ -1,6 +1,6 @@
 ---
 name: repurpose-podcast
-description: Turn public podcast or video episodes into readable full transcripts, quote lists, editable HTML publishing workspaces, X posts or threads, native Xiaohongshu copy and exportable image cards, plus a switchable local podcast library. Use for YouTube, Apple Podcasts, Xiaoyuzhou, Bilibili, RSS, direct audio URLs, and local audio when the user asks to transcribe, summarize, organize, publish, or repurpose long-form audio.
+description: Turn public podcast or video episodes into readable full transcripts, quote lists, editable HTML publishing workspaces, X posts or threads, native Xiaohongshu copy and exportable image cards, plus a switchable local podcast library. Prefer source-language human or automatic YouTube captions before audio transcription. Use for YouTube, Apple Podcasts, Xiaoyuzhou, Bilibili, RSS, direct audio URLs, and local audio when the user asks to transcribe, summarize, organize, publish, or repurpose long-form audio.
 ---
 
 # Repurpose Podcast
@@ -9,7 +9,7 @@ Create a source-grounded publishing workspace from one public episode. Keep the 
 
 ## Requirements
 
-Require `python3`, `yt-dlp`, `ffmpeg`, and `curl`. Require `PENNYSCRIBE_API_KEY` for transcription. Never print, persist in project files, or ask the user to paste the key into chat.
+Require `python3`, `yt-dlp`, and `curl`. Require `ffmpeg` and `PENNYSCRIBE_API_KEY` only when audio transcription is necessary. Never print, persist in project files, or ask the user to paste the key into chat.
 
 Treat public links as user-provided sources, not as permission to bypass authentication, paywalls, DRM, geographic restrictions, or platform controls. Do not read browser cookies unless the user explicitly requests and authorizes it.
 
@@ -24,7 +24,18 @@ Treat public links as user-provided sources, not as permission to bypass authent
 
    Use `--cookies-from-browser <browser>` only after explicit user authorization. Reject playlists by default. If an Apple Podcasts or Xiaoyuzhou page cannot expose public media, ask for its public RSS URL, direct audio URL, or a local file.
 
-3. Transcribe the normalized audio:
+3. Inspect the acquisition result. If `<project>/source/transcript.txt` exists, initialize the project directly from the extracted YouTube subtitles:
+
+   ```bash
+   python3 scripts/transcribe.py \
+     --transcript "<project>/source/transcript.txt" \
+     --metadata "<project>/source/metadata.json" \
+     --output "<project>/project.json"
+   ```
+
+   Do not call PennyScribe in this branch. The acquisition script selects source-language YouTube captions in this order: human-authored subtitles, then automatic captions. It rejects translated caption tracks.
+
+   Otherwise, when `<project>/source/media.mp3` exists, transcribe the normalized audio:
 
    ```bash
    python3 scripts/transcribe.py "<project>/source/media.mp3" \
@@ -32,7 +43,7 @@ Treat public links as user-provided sources, not as permission to bypass authent
      --output "<project>/project.json"
    ```
 
-   Poll until terminal. Preserve the raw PennyScribe text exactly in `transcript.raw`.
+   Poll until terminal. Preserve the selected subtitle text or raw PennyScribe text exactly in `transcript.raw`.
 
 4. Read [references/content-model.md](references/content-model.md) and [references/transcript-editing.md](references/transcript-editing.md). Populate `transcript.readable`, `digest`, including a useful quote list, and provenance fields in `project.json`. Preserve all meaningful content in the readable transcript; do not turn it into a summary.
 5. For X output, read [references/x-writing.md](references/x-writing.md). Generate separate `single_posts` and `threads`, always retaining the source episode URL.

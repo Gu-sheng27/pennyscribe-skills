@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Upload audio to PennyScribe, poll to completion, and create project JSON."""
+"""Create project JSON from extracted subtitles or a PennyScribe transcription."""
 
 from __future__ import annotations
 
@@ -35,14 +35,57 @@ def request_json(url: str, key: str) -> dict:
     return json.loads(response.stdout)
 
 
+def project_from_text(metadata: dict, raw: str) -> dict:
+    transcript = {"raw": raw, "readable": {"title": metadata.get("title") or "阅读全文", "dek": "", "sections": []}}
+    if metadata.get("transcript_source"):
+        transcript["source"] = metadata["transcript_source"]
+    if metadata.get("transcript_language"):
+        transcript["language"] = metadata["transcript_language"]
+    return {
+        "schema_version": 1,
+        "source": {
+            "url": metadata.get("source_url"), "platform": metadata.get("platform"), "title": metadata.get("title"),
+            "creator": metadata.get("creator"), "published_at": metadata.get("published_at"),
+            "duration_seconds": metadata.get("duration_seconds"), "cover": metadata.get("cover"),
+        },
+        "transcript": transcript,
+        "digest": {"recommendation": "", "summary": "", "insights": [], "quotes": [], "audience": []},
+        "x": {"single_posts": [], "threads": []},
+        "xiaohongshu": {"title_options": [], "caption": "", "theme": "layout-magazine", "cards": []},
+    }
+
+
+def write_project(project: dict, value: str) -> Path:
+    output = Path(value).resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(project, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return output
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("audio")
+    parser.add_argument("audio", nargs="?", help="Audio file to send to PennyScribe")
+    parser.add_argument("--transcript", help="Existing source-language subtitle text; bypasses PennyScribe")
     parser.add_argument("--metadata", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--language-code")
     parser.add_argument("--poll-seconds", type=float, default=5)
     args = parser.parse_args()
+
+    if bool(args.audio) == bool(args.transcript):
+        parser.error("provide exactly one of audio or --transcript")
+    metadata = json.loads(Path(args.metadata).read_text(encoding="utf-8"))
+
+    if args.transcript:
+        transcript_path = Path(args.transcript).resolve()
+        if not transcript_path.is_file():
+            parser.error(f"transcript not found: {transcript_path}")
+        raw = transcript_path.read_text(encoding="utf-8").strip()
+        if not raw:
+            parser.error("transcript is empty")
+        output = write_project(project_from_text(metadata, raw), args.output)
+        print(json.dumps({"project": str(output), "transcript_source": metadata.get("transcript_source") or "provided-text"}, ensure_ascii=False))
+        return 0
 
     key = os.environ.get("PENNYSCRIBE_API_KEY")
     if not key:
@@ -78,24 +121,11 @@ def main() -> int:
         print(f"Transcription ended in {state}: {job.get('error_message') or 'no detail'}", file=sys.stderr)
         return 2
 
-    metadata = json.loads(Path(args.metadata).read_text(encoding="utf-8"))
     raw = str((job.get("result") or {}).get("text") or "")
-    project = {
-        "schema_version": 1,
-        "source": {
-            "url": metadata.get("source_url"), "platform": metadata.get("platform"), "title": metadata.get("title"),
-            "creator": metadata.get("creator"), "published_at": metadata.get("published_at"),
-            "duration_seconds": metadata.get("duration_seconds") or job.get("duration_seconds"), "cover": metadata.get("cover"),
-        },
-        "transcript": {"raw": raw, "readable": {"title": metadata.get("title") or "阅读全文", "dek": "", "sections": []}},
-        "digest": {"recommendation": "", "summary": "", "insights": [], "quotes": [], "audience": []},
-        "x": {"single_posts": [], "threads": []},
-        "xiaohongshu": {"title_options": [], "caption": "", "theme": "layout-magazine", "cards": []},
-        "pennyscribe": {"transcription_id": job_id, "language_code": job.get("language_code"), "language": job.get("language")},
-    }
-    output = Path(args.output).resolve()
-    output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(project, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    metadata["duration_seconds"] = metadata.get("duration_seconds") or job.get("duration_seconds")
+    project = project_from_text(metadata, raw)
+    project["pennyscribe"] = {"transcription_id": job_id, "language_code": job.get("language_code"), "language": job.get("language")}
+    output = write_project(project, args.output)
     print(json.dumps({"project": str(output), "transcription_id": job_id}, ensure_ascii=False))
     return 0
 

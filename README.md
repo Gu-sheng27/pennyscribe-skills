@@ -12,7 +12,7 @@ Demo 使用一集公开播客展示完整效果，无需 API Key。你可以查�
 
 ## `repurpose-podcast` 能做什么？
 
-你只需要给 Codex 一个节目链接，它会完成下面这些工作：
+你只需要给智能体一个节目链接，它会完成下面这些工作：
 
 1. 提取节目标题、作者、封面等信息，并检查 YouTube 原语言字幕。
 2. YouTube 优先使用原语言人工字幕，没有人工字幕时使用原语言自动字幕；没有可用字幕的内容才下载音频并使用 PennyScribe 转写。
@@ -37,23 +37,21 @@ Demo 使用一集公开播客展示完整效果，无需 API Key。你可以查�
 
 ## 快速开始
 
-### 第一步：安装 Skill
+### 第一步：下载并加载 Skill
 
-如果你正在使用 Codex，可以直接把下面这句话发给 Codex：
+这个 Skill 不绑定特定智能体。Claude Code、WorkBuddy，以及其他能够读取 `SKILL.md`、执行 Python 和命令行工具的智能体都可以使用。
 
-> 请从 https://github.com/YeDaxia/pennyscribe-skills/tree/main/skills/repurpose-podcast 安装这个 `repurpose-podcast` skill。
-
-也可以手动安装：
+先下载仓库：
 
 ```bash
 git clone https://github.com/YeDaxia/pennyscribe-skills.git
-mkdir -p ~/.codex/skills
-cp -R pennyscribe-skills/skills/repurpose-podcast ~/.codex/skills/
 ```
 
-安装后，新建一个 Codex 任务。如果 Codex 能识别 `repurpose-podcast`，就说明安装成功。
+然后把下面的提示词发给你的智能体，并根据实际位置修改路径：
 
-如果你自定义了 `CODEX_HOME`，请把 Skill 复制到 `$CODEX_HOME/skills/`，而不是 `~/.codex/skills/`。
+> 请读取 `pennyscribe-skills/skills/repurpose-podcast/SKILL.md`，并使用这个 Skill 处理我接下来提供的节目链接。
+
+如果你的智能体原生支持 Agent Skills，也可以把整个 `repurpose-podcast` 目录复制到该产品文档指定的用户级或项目级 Skills 目录。不同产品的目录位置并不相同，请以对应产品的说明为准；不要只复制 `SKILL.md`，`scripts`、`references` 和 `assets` 目录也需要保留。
 
 ### 第二步：安装必要工具
 
@@ -86,7 +84,7 @@ winget install yt-dlp.yt-dlp
 winget install Gyan.FFmpeg
 ```
 
-现代 Windows 通常已经自带 `curl`。安装完成后如果 Codex 仍然找不到命令，请重新打开终端或重启 Codex。
+现代 Windows 通常已经自带 `curl`。安装完成后如果智能体仍然找不到命令，请重新打开终端，或者重启正在使用的智能体应用。
 
 macOS / Linux 可以用下面的命令确认安装成功：
 
@@ -112,31 +110,61 @@ curl --version
 
 如果 YouTube 视频包含可用的原语言字幕，这一步可以跳过。其他平台或没有可用字幕的 YouTube 视频仍需要使用 PennyScribe 转写。
 
-登录 [PennyScribe](https://pennyscribe.com) 创建 API Key，然后只在你自己的电脑上设置环境变量。
+登录 [PennyScribe](https://pennyscribe.com) 创建 API Key。推荐把它设置成当前用户的持久环境变量：设置后当前终端立即生效，关闭终端或重启电脑后也不会消失。
 
-macOS / Linux：
+macOS（默认 zsh）：
 
 ```bash
-export PENNYSCRIBE_API_KEY="你的 API Key"
+read -s "PENNYSCRIBE_API_KEY?请输入 PennyScribe API Key："
+echo
+export PENNYSCRIBE_API_KEY
+printf '\nexport PENNYSCRIBE_API_KEY=%q\n' "$PENNYSCRIBE_API_KEY" >> ~/.zshrc
+```
+
+Linux（默认 bash）：
+
+```bash
+read -rsp "请输入 PennyScribe API Key：" PENNYSCRIBE_API_KEY
+echo
+export PENNYSCRIBE_API_KEY
+printf '\nexport PENNYSCRIBE_API_KEY=%q\n' "$PENNYSCRIBE_API_KEY" >> ~/.bashrc
 ```
 
 Windows PowerShell：
 
 ```powershell
-$env:PENNYSCRIBE_API_KEY="你的 API Key"
+$secureKey = Read-Host "请输入 PennyScribe API Key" -AsSecureString
+$apiKey = [System.Net.NetworkCredential]::new("", $secureKey).Password
+[Environment]::SetEnvironmentVariable("PENNYSCRIBE_API_KEY", $apiKey, "User")
+$env:PENNYSCRIBE_API_KEY = $apiKey
+Remove-Variable apiKey, secureKey
 ```
 
-请不要把 API Key 粘贴到聊天中，也不要把它写入 `project.json`、README 或提交到 GitHub。
+以上命令不会在输入时显示 API Key。它们既设置当前会话，也写入当前用户的持久配置，不需要管理员权限。
 
-环境变量默认只对当前终端会话生效。设置完成后，请从同一个终端启动 Codex，或者重启已经打开的 Codex。
+可以用下面的命令确认变量已经存在；命令只显示“已生效”，不会打印 Key：
 
-### 第四步：让 Codex 处理节目
+macOS / Linux：
 
-把下面的示例提示词发给 Codex，并替换节目链接：
+```bash
+test -n "$PENNYSCRIBE_API_KEY" && echo "已生效" || echo "未生效"
+```
+
+Windows PowerShell：
+
+```powershell
+if ($env:PENNYSCRIBE_API_KEY) { "已生效" } else { "未生效" }
+```
+
+已经运行的智能体应用无法自动收到新环境变量，首次设置后需要重启一次应用。之后每次重新登录或重启电脑，配置仍然有效。请不要把 API Key 粘贴到聊天中，也不要写入 `project.json`、README 或提交到 GitHub。
+
+### 第四步：让智能体处理节目
+
+把下面的示例提示词发给你的智能体，并替换节目链接：
 
 > 请使用 `repurpose-podcast` 处理这个播客：`https://example.com/episode`。保留适合阅读的完整全文，并生成摘要、金句、X 文案、小红书标题、发布文案和图片卡片。最后生成本地预览网站。
 
-你也可以继续告诉 Codex 你的偏好，例如：
+你也可以继续告诉智能体你的偏好，例如：
 
 > 小红书卡片使用“手绘涂鸦”风格，标题更偏向职场人群，正文不要使用夸张表达。
 
@@ -172,18 +200,30 @@ $env:PENNYSCRIBE_API_KEY="你的 API Key"
 
 ### 内置卡片风格
 
-当前支持：
+下面每张预览图都使用在线 Demo 的前三张卡片生成，展示同一组内容在不同设计语言下的实际效果。
 
-1. 手绘涂鸦
-2. 新粗野主义
-3. 剪纸风格
-4. 中世纪现代
-5. 无障碍设计
-6. 漫画书
-7. 包豪斯
-8. 杂志排版
-9. 复古未来主义
-10. 扁平风格
+<table>
+  <tr>
+    <td width="50%"><strong>1. 手绘涂鸦</strong><br><img src="docs/images/card-styles/hand-drawn-sketch.webp" alt="手绘涂鸦风格的三张播客卡片"></td>
+    <td width="50%"><strong>2. 新粗野主义</strong><br><img src="docs/images/card-styles/neo-brutalism.webp" alt="新粗野主义风格的三张播客卡片"></td>
+  </tr>
+  <tr>
+    <td><strong>3. 剪纸风格</strong><br><img src="docs/images/card-styles/paper-cutout.webp" alt="剪纸风格的三张播客卡片"></td>
+    <td><strong>4. 中世纪现代</strong><br><img src="docs/images/card-styles/mid-century-modern.webp" alt="中世纪现代风格的三张播客卡片"></td>
+  </tr>
+  <tr>
+    <td><strong>5. 无障碍设计</strong><br><img src="docs/images/card-styles/accessibility.webp" alt="无障碍设计风格的三张播客卡片"></td>
+    <td><strong>6. 漫画书</strong><br><img src="docs/images/card-styles/comic-book.webp" alt="漫画书风格的三张播客卡片"></td>
+  </tr>
+  <tr>
+    <td><strong>7. 包豪斯</strong><br><img src="docs/images/card-styles/bauhaus.webp" alt="包豪斯风格的三张播客卡片"></td>
+    <td><strong>8. 杂志排版</strong><br><img src="docs/images/card-styles/magazine.webp" alt="杂志排版风格的三张播客卡片"></td>
+  </tr>
+  <tr>
+    <td><strong>9. 复古未来主义</strong><br><img src="docs/images/card-styles/retro-futurism.webp" alt="复古未来主义风格的三张播客卡片"></td>
+    <td><strong>10. 扁平风格</strong><br><img src="docs/images/card-styles/flat-design.webp" alt="扁平风格的三张播客卡片"></td>
+  </tr>
+</table>
 
 封面卡和内容卡使用不同的构图；内容卡默认采用三段式结构，让核心结论、事实背景和进一步影响都能独立呈现。
 
@@ -194,7 +234,8 @@ $env:PENNYSCRIBE_API_KEY="你的 API Key"
 ```text
 episode-project/
 ├── source/
-│   ├── media.mp3          # 规范化后的音频
+│   ├── transcript.txt     # YouTube 存在原语言字幕时生成
+│   ├── media.mp3          # 没有可用字幕时生成
 │   └── metadata.json      # 节目信息
 ├── project.json           # 全文、摘要和社交素材
 ├── index.html             # 可编辑的单集网页

@@ -37,17 +37,29 @@ Demo 使用一集公开播客展示完整效果，无需 API Key。你可以查�
 
 ## 快速开始
 
-### 第一步：下载并加载 Skill
+### 第一步：安装 Skill
 
 这个 Skill 不绑定特定智能体。Claude Code、WorkBuddy，以及其他能够读取 `SKILL.md`、执行 Python 和命令行工具的智能体都可以使用。
 
-先下载仓库：
+#### 推荐：一句话安装
+
+把下面这句话完整发送给你的智能体：
+
+> 请从 https://github.com/YeDaxia/pennyscribe-skills/tree/main/skills/repurpose-podcast 安装 `repurpose-podcast` Skill 到当前用户的 Skills 目录，完整保留 `SKILL.md`、`scripts`、`references` 和 `assets`，安装完成后读取 `SKILL.md` 并确认已经可以使用。
+
+支持自动安装的智能体会自行下载文件、选择对应产品的用户级 Skills 目录，并在安装后检查所需文件。当它确认能够读取 `name: repurpose-podcast`，且四个目录或文件均存在时，就表示安装成功。首次安装后建议新建一个会话，让智能体重新加载 Skills 列表。
+
+如果智能体无法访问 GitHub、没有文件写入权限，或者不支持自动安装，请使用下面的手动模式。
+
+#### 手动模式
+
+先在终端下载仓库：
 
 ```bash
 git clone https://github.com/YeDaxia/pennyscribe-skills.git
 ```
 
-然后把下面的提示词发给你的智能体，并根据实际位置修改路径：
+下载完成后，把下面的提示词发给智能体，并根据实际位置修改路径：
 
 > 请读取 `pennyscribe-skills/skills/repurpose-podcast/SKILL.md`，并使用这个 Skill 处理我接下来提供的节目链接。
 

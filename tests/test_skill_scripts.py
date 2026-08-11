@@ -192,11 +192,11 @@ class SkillScriptTests(unittest.TestCase):
             result = subprocess.run([sys.executable, str(SKILL / "scripts" / "build_workspace.py"), str(source), "--output", str(target)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             html = target.read_text(encoding="utf-8")
-            for text in ("PennyScribe Skills", "导读与摘要", "金句", "阅读全文", "X 素材", "小红书素材", "标题与文案", "卡片编辑", "第一段完整内容。", "卡片标题", "导出全部卡片", "复制文字", "复制卡片", "自由排版", "重置排版", "data-layout-key", "function bindLayoutInteractions", "function zipFiles", "ClipboardItem"):
+            for text in ("PennyScribe Skills", "导读与摘要", "金句", "阅读全文", "X 素材", "小红书素材", "标题与文案", "卡片编辑", "第一段完整内容。", "卡片标题", "导出全部卡片", "复制文字", "复制卡片", "自由排版", "重置排版", "data-layout-key", "function bindLayoutInteractions", "function headlineClass", "function zipFiles", "ClipboardItem"):
                 self.assertIn(text, html)
             for theme in ("手绘涂鸦", "新粗野主义", "剪纸风格", "中世纪现代", "无障碍设计", "漫画书", "包豪斯", "杂志排版", "复古未来主义", "扁平风格"):
                 self.assertIn(theme, html)
-            for css in ("theme-visual-neo-brutalism:before{left:auto", "theme-visual-paper-cutout:after{content:none}", "theme-retro-mid-century:before{left:auto", "Centered composition pass", "theme-visual-hand-drawn:before{bottom:auto;width:auto}", "theme-visual-accessibility.card-cover:after{left:auto", "theme-visual-comic-book:before{left:auto", "theme-retro-bauhaus:before{left:auto", "theme-layout-magazine.card-cover .body{max-width:100%", "theme-retro-futurism:before{left:48px", "theme-core-flat-design:before{left:auto", "text-wrap:balance"):
+            for css in ("theme-visual-neo-brutalism:before{left:auto", "theme-visual-paper-cutout:after{content:none}", "theme-retro-mid-century:before{left:auto", "Centered composition pass", "Neo-brutalist asymmetric headline lockup", "theme-visual-neo-brutalism h2::first-line", 'content:"BIG\\A IDEA"', "theme-visual-hand-drawn:before{bottom:auto;width:auto}", "theme-visual-accessibility.card-cover:after{left:auto", "theme-visual-comic-book:before{left:auto", "theme-retro-bauhaus:before{left:auto", "theme-layout-magazine.card-cover .body{max-width:100%", "theme-retro-futurism:before{left:48px", "theme-core-flat-design:before{left:auto", "text-wrap:balance"):
                 self.assertIn(css, html)
             self.assertIn("function cardParagraphs", html)
             self.assertNotIn("__PROJECT_DATA__", html)

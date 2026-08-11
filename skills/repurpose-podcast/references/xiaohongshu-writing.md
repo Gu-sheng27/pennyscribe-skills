@@ -39,6 +39,8 @@ The built-in themes translate ten reusable design languages into static social c
 
 Choose one theme based on tone and keep it consistent within a set. `layout-magazine` is the safest content-first default for dense three-paragraph cards; `visual-accessibility` is the safest maximum-readability option. Do not use interaction-led UI styles for exported images. Use the episode cover only when it is available and legally exposed by the source page. Never imply AI-generated decoration is an original episode image.
 
+Each built-in theme has its own compact side marker beside the headline. Treat that marker as part of the composition, not metadata: keep the wording generic, short, and stylistically native to the theme. Do not replace it with channel information or repeat the episode title inside it.
+
 ## Card system
 
 - Use a 3:4 canvas at 1080×1440 export resolution with generous safe margins.

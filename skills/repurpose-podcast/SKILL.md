@@ -62,7 +62,7 @@ Treat public links as user-provided sources, not as permission to bypass authent
    python3 scripts/build_workspace.py "<project>/project.json" --output "<project>/index.html"
    ```
 
-9. Let the user review and edit the HTML. Do not silently overwrite user-edited copy when regenerating another section. The page can export edited project JSON, copy an individual card PNG to the clipboard, download one PNG, or package every card into one ZIP.
+9. Let the user review and edit the HTML. Do not silently overwrite user-edited copy when regenerating another section. In Xiaohongshu card editing, “自由排版” lets the user drag the eyebrow, title, individual body paragraphs, page number, and eligible small theme decorations; these offsets persist in exported project JSON and card images. The page can export edited project JSON, copy an individual card PNG to the clipboard, download one PNG, or package every card into one ZIP.
 10. Export Xiaohongshu cards after review:
 
    ```bash

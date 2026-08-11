@@ -53,7 +53,14 @@ Use UTF-8 JSON. Preserve unknown optional values as `null`, not invented text.
     "caption": "Link-free, paragraph-formatted caption",
     "theme": "layout-magazine",
     "cards": [
-      {"kind": "cover", "eyebrow": "PODCAST NOTES", "title": "Card title", "body": "", "source_paragraph_ids": []}
+      {
+        "kind": "cover",
+        "eyebrow": "PODCAST NOTES",
+        "title": "Card title",
+        "body": "",
+        "source_paragraph_ids": [],
+        "layout": {"title": {"x": 0, "y": 0}, "body": {"x": 0, "y": 0}}
+      }
     ]
   }
 }
@@ -62,3 +69,5 @@ Use UTF-8 JSON. Preserve unknown optional values as `null`, not invented text.
 Keep stable section and paragraph IDs across editing. Use source character ranges when confidently available. Social outputs may cite multiple paragraph IDs. Never cite a nonexistent ID.
 
 Create at least three `digest.quotes` entries so the workspace can render a useful standalone quote list. Keep Xiaohongshu copy free of URLs; the source URL remains available elsewhere in the project and workspace.
+
+`cards[].layout` is optional and is normally written by the HTML editor. Keys may be `eyebrow`, `title`, `body` for a cover body, `body-0`/`body-1`/`body-2` for content paragraphs, `footer`, `before`, or `after`. Each value is an `{x, y}` pixel offset. Preserve this object when rebuilding a user-edited project.

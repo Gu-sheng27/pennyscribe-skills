@@ -48,6 +48,9 @@ Choose one theme based on tone and keep it consistent within a set. `layout-maga
 - Keep titles short enough to avoid dense line breaks. Prefer 2–4 lines on the cover and 2–3 lines on content cards.
 - Do not show the podcast channel, show name, creator, URL, or generic watermark on card artwork.
 - Use typography, rules, shapes, and whitespace intentionally. Avoid decorative clutter and tiny body text.
+- Keep text inside a visually centered, approximately symmetric safe area. Reserve edge zones for theme decoration and never let decorative outlines, shadows, or shapes intersect the headline.
+- Balance headline line breaks instead of leaving one or two characters stranded. Preserve at least 24px of visual separation between the headline and body block.
+- Use no more than two large material/background layers. A cover supporting hook should be one clear container, not nested colored boxes.
 
 ## Grounding
 

@@ -196,6 +196,8 @@ class SkillScriptTests(unittest.TestCase):
                 self.assertIn(text, html)
             for theme in ("手绘涂鸦", "新粗野主义", "剪纸风格", "中世纪现代", "无障碍设计", "漫画书", "包豪斯", "杂志排版", "复古未来主义", "扁平风格"):
                 self.assertIn(theme, html)
+            for css in ("theme-visual-neo-brutalism:before{left:auto", "theme-visual-paper-cutout:after{content:none}", "theme-retro-mid-century:before{left:auto", "text-wrap:balance"):
+                self.assertIn(css, html)
             self.assertIn("function cardParagraphs", html)
             self.assertNotIn("__PROJECT_DATA__", html)
 

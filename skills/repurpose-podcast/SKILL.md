@@ -9,7 +9,7 @@ Create a source-grounded publishing workspace from one public episode. Keep the 
 
 ## Requirements
 
-Require `python3`, `yt-dlp`, and `curl`. Require `ffmpeg` and `PENNYSCRIBE_API_KEY` only when audio transcription is necessary. Never print, persist in project files, or ask the user to paste the key into chat.
+Require `python3`, `yt-dlp`, and `curl`. Require `ffmpeg` and `PENNYSCRIBE_API_KEY` only when audio transcription is necessary. `PENNYSCRIBE_API_KEY` stores the key for the selected transcription provider, either PennyScribe or ElevenLabs; never print it, persist it in project files, or ask the user to paste it into chat.
 
 Treat public links as user-provided sources, not as permission to bypass authentication, paywalls, DRM, geographic restrictions, or platform controls. Do not read browser cookies unless the user explicitly requests and authorizes it.
 
@@ -43,7 +43,13 @@ Treat public links as user-provided sources, not as permission to bypass authent
      --output "<project>/project.json"
    ```
 
-   Poll until terminal. Preserve the selected subtitle text or raw PennyScribe text exactly in `transcript.raw`.
+   PennyScribe is the default provider. To use ElevenLabs instead, keep the ElevenLabs key in the same `PENNYSCRIBE_API_KEY` variable and add:
+
+   ```bash
+   --provider elevenlabs --language-code zh --diarize
+   ```
+
+   ElevenLabs uses `scribe_v2` by default; override it only with a supported `--model-id`. Poll PennyScribe until terminal; ElevenLabs returns synchronously. Preserve the selected subtitle text or raw provider result exactly in `transcript.raw`.
 
 4. Read [references/content-model.md](references/content-model.md) and [references/transcript-editing.md](references/transcript-editing.md). Populate `transcript.readable`, `digest`, including a useful quote list, and provenance fields in `project.json`. Preserve all meaningful content in the readable transcript; do not turn it into a summary.
 5. For X output, read [references/x-writing.md](references/x-writing.md). Generate separate `single_posts` and `threads`, always retaining the source episode URL.
@@ -62,7 +68,7 @@ Treat public links as user-provided sources, not as permission to bypass authent
    python3 scripts/build_workspace.py "<project>/project.json" --output "<project>/index.html"
    ```
 
-9. Let the user review and edit the HTML. Do not silently overwrite user-edited copy when regenerating another section. In Xiaohongshu card editing, “自由排版” lets the user drag the eyebrow, title, individual body paragraphs, page number, and eligible small theme decorations; these offsets persist in exported project JSON and card images. The page can export edited project JSON, copy an individual card PNG to the clipboard, download one PNG, or package every card into one ZIP.
+9. Let the user review and edit the HTML. Do not silently overwrite user-edited copy when regenerating another section. Open Xiaohongshu card editing by default. “自由排版” lets the user drag the eyebrow, title, individual body paragraphs, page number, and eligible small theme decorations. It also reveals a toolbar above each card. The cursor position selects either the title or body block; the toolbar range slider and color picker update only that selected block. Users may hide page numbers. These choices persist in exported project JSON and card images. The page can export edited project JSON, copy an individual card PNG to the clipboard, download one PNG, or package every card into one ZIP.
 10. Export Xiaohongshu cards after review:
 
    ```bash

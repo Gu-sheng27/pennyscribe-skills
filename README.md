@@ -118,16 +118,16 @@ curl --version
 
 四条命令都能输出版本信息后，再继续下一步。
 
-### 第三步：设置 PennyScribe API Key
+### 第三步：设置转写 API Key
 
-如果 YouTube 视频包含可用的原语言字幕，这一步可以跳过。其他平台或没有可用字幕的 YouTube 视频仍需要使用 PennyScribe 转写。
+如果 YouTube 视频包含可用的原语言字幕，这一步可以跳过。其他平台或没有可用字幕的 YouTube 视频，需要选择 PennyScribe 或 ElevenLabs 来转写。
 
-登录 [PennyScribe](https://pennyscribe.com) 创建 API Key。推荐把它设置成当前用户的持久环境变量：设置后当前终端立即生效，关闭终端或重启电脑后也不会消失。
+登录 [PennyScribe](https://pennyscribe.com) 或 [ElevenLabs](https://elevenlabs.io) 创建 API Key。无论选择哪一家，都统一把该服务的 Key 保存到 `PENNYSCRIBE_API_KEY`；一次只需保存当前使用的服务。推荐把它设置成当前用户的持久环境变量：设置后当前终端立即生效，关闭终端或重启电脑后也不会消失。
 
 macOS（默认 zsh）：
 
 ```bash
-read -s "PENNYSCRIBE_API_KEY?请输入 PennyScribe API Key："
+read -s "PENNYSCRIBE_API_KEY?请输入转写服务 API Key："
 echo
 export PENNYSCRIBE_API_KEY
 printf '\nexport PENNYSCRIBE_API_KEY=%q\n' "$PENNYSCRIBE_API_KEY" >> ~/.zshrc
@@ -136,7 +136,7 @@ printf '\nexport PENNYSCRIBE_API_KEY=%q\n' "$PENNYSCRIBE_API_KEY" >> ~/.zshrc
 Linux（默认 bash）：
 
 ```bash
-read -rsp "请输入 PennyScribe API Key：" PENNYSCRIBE_API_KEY
+read -rsp "请输入转写服务 API Key：" PENNYSCRIBE_API_KEY
 echo
 export PENNYSCRIBE_API_KEY
 printf '\nexport PENNYSCRIBE_API_KEY=%q\n' "$PENNYSCRIBE_API_KEY" >> ~/.bashrc
@@ -145,7 +145,7 @@ printf '\nexport PENNYSCRIBE_API_KEY=%q\n' "$PENNYSCRIBE_API_KEY" >> ~/.bashrc
 Windows PowerShell：
 
 ```powershell
-$secureKey = Read-Host "请输入 PennyScribe API Key" -AsSecureString
+$secureKey = Read-Host "请输入转写服务 API Key" -AsSecureString
 $apiKey = [System.Net.NetworkCredential]::new("", $secureKey).Password
 [Environment]::SetEnvironmentVariable("PENNYSCRIBE_API_KEY", $apiKey, "User")
 $env:PENNYSCRIBE_API_KEY = $apiKey
@@ -184,25 +184,27 @@ if ($env:PENNYSCRIBE_API_KEY) { "已生效" } else { "未生效" }
 
 ## 生成的网站怎么使用？
 
-网站包含五个主要页面：
+网站包含五个主要页面，默认先打开“小红书素材”的卡片编辑器：
 
 | 页面 | 用途 |
 | --- | --- |
 | 导读与摘要 | 快速了解节目主题、摘要、核心观点和适合人群 |
+| 小红书素材 | 编辑标题、无链接发布文案和图片卡片 |
 | 金句 | 查看、编辑和复制节目中的重点表达 |
 | 阅读全文 | 阅读经过分段和章节整理的完整转写 |
 | X 素材 | 复制带原节目链接的单条文案或 Thread |
-| 小红书素材 | 编辑标题、无链接发布文案和图片卡片 |
 
-页面中的主要文字都可以直接点击编辑。编辑完成后，可以通过顶部的“导出项目 JSON”保存修改后的结构化内容。
+页面中的主要文字都可以直接点击编辑。“导读与摘要”使用更宽松的杂志式编排，摘要、核心观点、推荐理由和适合人群会分区展示。编辑完成后，可以通过顶部的“导出项目 JSON”保存修改后的结构化内容。
 
 ### 小红书卡片操作
 
 进入“小红书素材 → 卡片编辑”后，你可以：
 
-- 切换 10 种卡片风格。
+- 默认使用高对比、大字号的“无障碍设计”，也可以切换其他 9 种卡片风格。
 - 点击“自由排版”，拖动眉题、主标题、每一段正文、页码和可识别的小型装饰；方向键可微调位置，按住 Shift 可加快移动。
 - 点击“重置排版”可恢复当前项目全部卡片的默认位置。
+- 点击“隐藏页码”可让所有卡片不显示页码，再次点击即可恢复。
+- 点击“自由排版”后，每张卡片上方会显示字体工具。先把光标放到主标题或正文中，工具栏会标明当前内容块；随后拖动字号滑杆或选择颜色，只会调整光标所在的内容块。点击“重置此块”可恢复该内容块的主题默认样式。
 - 使用左右箭头调整卡片顺序。
 - 点击“复制文字”复制当前卡片里的文字。
 - 点击“导出 PNG”下载当前卡片的 1080×1440 图片。
@@ -279,7 +281,7 @@ episode-project/
 
 包含原语言字幕的 YouTube 视频会直接提取字幕，不需要等待 PennyScribe。Skill 会优先选择人工字幕，其次选择同语言自动字幕，并排除翻译字幕。
 
-没有可用字幕时，节目需要先下载、转换、上传，再等待 PennyScribe 完成转写。耗时会受到节目长度、文件大小和网络状况影响。
+没有可用字幕时，节目需要先下载、转换并上传到所选的转写服务。默认使用 PennyScribe；也可以让智能体使用 ElevenLabs。耗时会受到节目长度、文件大小、服务响应和网络状况影响。
 
 ### 小红书文案为什么不带节目链接？
 
@@ -320,7 +322,7 @@ node skills/repurpose-podcast/scripts/export_cards.cjs \
 ## 安全与隐私
 
 - API Key 只保存在本机环境变量中。
-- 只有需要 PennyScribe 转写时，音频才会上传。YouTube 字幕提取路径不会上传音频。
+- 只有需要语音转写时，音频才会上传到你选择的 PennyScribe 或 ElevenLabs。YouTube 字幕提取路径不会上传音频。
 - 不要提交 Cookie、音频文件或包含私人内容的项目文件。
 - 只处理你有权访问和使用的内容。
 - 本地预览服务器默认只监听 `127.0.0.1`，不会自动暴露到公网。

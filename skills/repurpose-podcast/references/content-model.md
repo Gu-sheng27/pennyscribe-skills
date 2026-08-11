@@ -15,7 +15,7 @@ Use UTF-8 JSON. Preserve unknown optional values as `null`, not invented text.
     "cover": null
   },
   "transcript": {
-    "raw": "Exact extracted subtitle or PennyScribe result",
+    "raw": "Exact extracted subtitle, PennyScribe result, or ElevenLabs result",
     "source": "youtube-manual-subtitles",
     "language": "zh-Hans",
     "readable": {
@@ -51,7 +51,8 @@ Use UTF-8 JSON. Preserve unknown optional values as `null`, not invented text.
   "xiaohongshu": {
     "title_options": ["Platform-native title, not the episode title"],
     "caption": "Link-free, paragraph-formatted caption",
-    "theme": "layout-magazine",
+    "theme": "visual-accessibility",
+    "show_page_numbers": true,
     "cards": [
       {
         "kind": "cover",
@@ -59,6 +60,7 @@ Use UTF-8 JSON. Preserve unknown optional values as `null`, not invented text.
         "title": "Card title",
         "body": "",
         "source_paragraph_ids": [],
+        "typography": {"title_size": 56, "title_color": "#17191b", "body_size": 20, "body_color": "#41464d"},
         "layout": {"title": {"x": 0, "y": 0}, "body": {"x": 0, "y": 0}}
       }
     ]
@@ -71,3 +73,5 @@ Keep stable section and paragraph IDs across editing. Use source character range
 Create at least three `digest.quotes` entries so the workspace can render a useful standalone quote list. Keep Xiaohongshu copy free of URLs; the source URL remains available elsewhere in the project and workspace.
 
 `cards[].layout` is optional and is normally written by the HTML editor. Keys may be `eyebrow`, `title`, `body` for a cover body, `body-0`/`body-1`/`body-2` for content paragraphs, `footer`, `before`, or `after`. Each value is an `{x, y}` pixel offset. Preserve this object when rebuilding a user-edited project.
+
+`xiaohongshu.show_page_numbers` and `cards[].typography` are optional editor preferences. Omit typography values to use the theme defaults. Valid overrides are title size `24–76`, body size `14–32`, and independent six-digit hex colors in `title_color` and `body_color`. Preserve these fields when rebuilding a user-edited project.

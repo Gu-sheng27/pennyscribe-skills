@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create project JSON from extracted subtitles or a PennyScribe transcription."""
+"""Create project JSON from subtitles, PennyScribe, or ElevenLabs speech-to-text."""
 
 from __future__ import annotations
 
@@ -12,7 +12,8 @@ import time
 from pathlib import Path
 
 
-API = "https://api.pennyscribe.com/v1/transcriptions"
+PENNYSCRIBE_API = "https://api.pennyscribe.com/v1/transcriptions"
+ELEVENLABS_API = "https://api.elevenlabs.io/v1/speech-to-text"
 TERMINAL = {"COMPLETED", "FAILED", "CANCELLED"}
 
 
@@ -20,19 +21,76 @@ def curl_quote(value: str) -> str:
     return value.replace("\\", "\\\\").replace('"', '\\"').replace("\r", "").replace("\n", "")
 
 
-def request_json(url: str, key: str) -> dict:
-    config = "\n".join([
-        f'url = "{curl_quote(url)}"',
-        'silent',
-        'show-error',
-        'fail-with-body',
-        f'header = "Authorization: Bearer {curl_quote(key)}"',
-    ]) + "\n"
-    response = subprocess.run(["curl", "--config", "-"], input=config, text=True, capture_output=True, check=False)
+def run_curl(config_lines: list[str]) -> dict:
+    response = subprocess.run(
+        ["curl", "--config", "-"], input="\n".join(config_lines) + "\n",
+        text=True, capture_output=True, check=False,
+    )
     if response.returncode:
         detail = response.stdout.strip() or response.stderr.strip()
         raise RuntimeError(detail or "request failed")
     return json.loads(response.stdout)
+
+
+def pennyscribe_request(url: str, key: str) -> dict:
+    return run_curl([
+        f'url = "{curl_quote(url)}"', 'silent', 'show-error', 'fail-with-body',
+        f'header = "Authorization: Bearer {curl_quote(key)}"',
+    ])
+
+
+def transcribe_pennyscribe(audio: Path, key: str, language_code: str | None, poll_seconds: float) -> tuple[str, dict]:
+    config = [
+        f'url = "{PENNYSCRIBE_API}"', 'request = "POST"', 'silent', 'show-error', 'fail-with-body',
+        f'header = "Authorization: Bearer {curl_quote(key)}"',
+        f'form = "file=@{curl_quote(str(audio))}"',
+    ]
+    if language_code:
+        config.append(f'form = "language_code={curl_quote(language_code)}"')
+    job = run_curl(config)
+    job_id = str(job.get("id") or "")
+    if not job_id:
+        raise RuntimeError("PennyScribe response did not include an id")
+
+    while True:
+        job = pennyscribe_request(f"{PENNYSCRIBE_API}/{job_id}", key)
+        state = str(job.get("state") or "")
+        if state in TERMINAL:
+            break
+        time.sleep(max(1, poll_seconds))
+    if state != "COMPLETED":
+        raise RuntimeError(f"Transcription ended in {state}: {job.get('error_message') or 'no detail'}")
+    raw = str((job.get("result") or {}).get("text") or "").strip()
+    if not raw:
+        raise RuntimeError("PennyScribe returned an empty transcript")
+    return raw, {
+        "provider": "pennyscribe", "transcription_id": job_id,
+        "language_code": job.get("language_code"), "language": job.get("language"),
+        "duration_seconds": job.get("duration_seconds"),
+    }
+
+
+def transcribe_elevenlabs(audio: Path, key: str, language_code: str | None, model_id: str, diarize: bool) -> tuple[str, dict]:
+    config = [
+        f'url = "{ELEVENLABS_API}"', 'request = "POST"', 'silent', 'show-error', 'fail-with-body',
+        f'header = "xi-api-key: {curl_quote(key)}"',
+        f'form = "file=@{curl_quote(str(audio))}"',
+        f'form = "model_id={curl_quote(model_id)}"',
+        f'form = "diarize={str(diarize).lower()}"',
+        'form = "tag_audio_events=false"',
+    ]
+    if language_code:
+        config.append(f'form = "language_code={curl_quote(language_code)}"')
+    response = run_curl(config)
+    raw = str(response.get("text") or "").strip()
+    if not raw:
+        raise RuntimeError("ElevenLabs returned an empty transcript")
+    return raw, {
+        "provider": "elevenlabs", "model_id": model_id,
+        "language_code": response.get("language_code"),
+        "language_probability": response.get("language_probability"),
+        "diarize": diarize,
+    }
 
 
 def project_from_text(metadata: dict, raw: str) -> dict:
@@ -51,7 +109,7 @@ def project_from_text(metadata: dict, raw: str) -> dict:
         "transcript": transcript,
         "digest": {"recommendation": "", "summary": "", "insights": [], "quotes": [], "audience": []},
         "x": {"single_posts": [], "threads": []},
-        "xiaohongshu": {"title_options": [], "caption": "", "theme": "layout-magazine", "cards": []},
+        "xiaohongshu": {"title_options": [], "caption": "", "theme": "visual-accessibility", "show_page_numbers": True, "cards": []},
     }
 
 
@@ -64,12 +122,15 @@ def write_project(project: dict, value: str) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("audio", nargs="?", help="Audio file to send to PennyScribe")
-    parser.add_argument("--transcript", help="Existing source-language subtitle text; bypasses PennyScribe")
+    parser.add_argument("audio", nargs="?", help="Audio file to transcribe")
+    parser.add_argument("--transcript", help="Existing source-language subtitle text; bypasses speech-to-text")
     parser.add_argument("--metadata", required=True)
     parser.add_argument("--output", required=True)
+    parser.add_argument("--provider", choices=("pennyscribe", "elevenlabs"), default="pennyscribe")
     parser.add_argument("--language-code")
-    parser.add_argument("--poll-seconds", type=float, default=5)
+    parser.add_argument("--poll-seconds", type=float, default=5, help="PennyScribe polling interval")
+    parser.add_argument("--model-id", default="scribe_v2", help="ElevenLabs speech-to-text model")
+    parser.add_argument("--diarize", action="store_true", help="Enable ElevenLabs speaker diarization")
     args = parser.parse_args()
 
     if bool(args.audio) == bool(args.transcript):
@@ -89,44 +150,28 @@ def main() -> int:
 
     key = os.environ.get("PENNYSCRIBE_API_KEY")
     if not key:
-        parser.error("PENNYSCRIBE_API_KEY is not set; create a key and set it locally without pasting it into chat")
+        parser.error("PENNYSCRIBE_API_KEY is not set; store the selected provider's key in this variable")
     audio = Path(args.audio).resolve()
     if not audio.is_file():
         parser.error(f"audio not found: {audio}")
 
-    curl_config = [f'url = "{API}"', 'request = "POST"', 'silent', 'show-error', 'fail-with-body', f'header = "Authorization: Bearer {curl_quote(key)}"', f'form = "file=@{curl_quote(str(audio))}"']
-    if args.language_code:
-        curl_config.append(f'form = "language_code={args.language_code}"')
-    submitted = subprocess.run(["curl", "--config", "-"], input="\n".join(curl_config) + "\n", text=True, capture_output=True, check=False)
-    if submitted.returncode:
-        print(f"PennyScribe submission failed: {submitted.stderr.strip() or submitted.stdout.strip()}", file=sys.stderr)
-        return 2
-    job = json.loads(submitted.stdout)
-    job_id = str(job.get("id") or "")
-    if not job_id:
-        raise RuntimeError("PennyScribe response did not include an id")
-
-    while True:
-        try:
-            job = request_json(f"{API}/{job_id}", key)
-        except (RuntimeError, json.JSONDecodeError) as exc:
-            print(f"PennyScribe polling failed: {exc}", file=sys.stderr)
-            return 2
-        state = str(job.get("state") or "")
-        if state in TERMINAL:
-            break
-        time.sleep(max(1, args.poll_seconds))
-
-    if state != "COMPLETED":
-        print(f"Transcription ended in {state}: {job.get('error_message') or 'no detail'}", file=sys.stderr)
+    try:
+        if args.provider == "elevenlabs":
+            raw, record = transcribe_elevenlabs(audio, key, args.language_code, args.model_id, args.diarize)
+        else:
+            raw, record = transcribe_pennyscribe(audio, key, args.language_code, args.poll_seconds)
+    except (RuntimeError, json.JSONDecodeError) as exc:
+        print(f"{args.provider} transcription failed: {exc}", file=sys.stderr)
         return 2
 
-    raw = str((job.get("result") or {}).get("text") or "")
-    metadata["duration_seconds"] = metadata.get("duration_seconds") or job.get("duration_seconds")
+    metadata["transcript_source"] = args.provider
+    metadata["duration_seconds"] = metadata.get("duration_seconds") or record.get("duration_seconds")
     project = project_from_text(metadata, raw)
-    project["pennyscribe"] = {"transcription_id": job_id, "language_code": job.get("language_code"), "language": job.get("language")}
+    project["transcription"] = record
+    if args.provider == "pennyscribe":
+        project["pennyscribe"] = {key: value for key, value in record.items() if key != "provider"}
     output = write_project(project, args.output)
-    print(json.dumps({"project": str(output), "transcription_id": job_id}, ensure_ascii=False))
+    print(json.dumps({"project": str(output), "provider": args.provider, "transcription_id": record.get("transcription_id")}, ensure_ascii=False))
     return 0
 
 

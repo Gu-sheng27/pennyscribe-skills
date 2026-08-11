@@ -28,6 +28,13 @@ def load_preview_server():
     return module
 
 
+def load_transcriber():
+    spec = importlib.util.spec_from_file_location("transcribe", SKILL / "scripts" / "transcribe.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 class SkillScriptTests(unittest.TestCase):
     def test_public_page_fallback_downloads_and_normalizes_once(self):
         module = load_acquirer()
@@ -174,6 +181,40 @@ class SkillScriptTests(unittest.TestCase):
             self.assertEqual(project["transcript"]["raw"], "原语言字幕第一段。\n原语言字幕第二段。")
             self.assertEqual(project["transcript"]["source"], "youtube-automatic-subtitles")
             self.assertEqual(project["transcript"]["language"], "zh-Hans")
+            self.assertEqual(project["xiaohongshu"]["theme"], "visual-accessibility")
+            self.assertNotIn("pennyscribe", project)
+
+    def test_transcribes_with_elevenlabs_using_unified_api_key_variable(self):
+        module = load_transcriber()
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            audio = root / "media.mp3"
+            metadata = root / "metadata.json"
+            output = root / "project.json"
+            audio.write_bytes(b"audio")
+            metadata.write_text(json.dumps({"source_url": "https://example.com", "platform": "test", "title": "Episode"}), encoding="utf-8")
+            response = {"text": "ElevenLabs 转写正文。", "language_code": "zh", "language_probability": 0.99}
+            completed = subprocess.CompletedProcess([], 0, json.dumps(response), "")
+            argv = [
+                "transcribe.py", str(audio), "--metadata", str(metadata), "--output", str(output),
+                "--provider", "elevenlabs", "--language-code", "zh", "--diarize",
+            ]
+            with (
+                mock.patch.object(module.subprocess, "run", return_value=completed) as runner,
+                mock.patch.dict(module.os.environ, {"PENNYSCRIBE_API_KEY": "secret-elevenlabs-key"}, clear=True),
+                mock.patch.object(sys, "argv", argv),
+            ):
+                self.assertEqual(module.main(), 0)
+
+            curl_config = runner.call_args.kwargs["input"]
+            self.assertIn('header = "xi-api-key: secret-elevenlabs-key"', curl_config)
+            self.assertIn('form = "model_id=scribe_v2"', curl_config)
+            self.assertIn('form = "language_code=zh"', curl_config)
+            self.assertIn('form = "diarize=true"', curl_config)
+            project = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(project["transcript"]["raw"], "ElevenLabs 转写正文。")
+            self.assertEqual(project["transcript"]["source"], "elevenlabs")
+            self.assertEqual(project["transcription"]["provider"], "elevenlabs")
             self.assertNotIn("pennyscribe", project)
 
     def test_builds_self_contained_workspace_with_five_views(self):
@@ -192,8 +233,17 @@ class SkillScriptTests(unittest.TestCase):
             result = subprocess.run([sys.executable, str(SKILL / "scripts" / "build_workspace.py"), str(source), "--output", str(target)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             html = target.read_text(encoding="utf-8")
-            for text in ("PennyScribe Skills", "导读与摘要", "金句", "阅读全文", "X 素材", "小红书素材", "标题与文案", "卡片编辑", "第一段完整内容。", "卡片标题", "导出全部卡片", "复制文字", "复制卡片", "自由排版", "重置排版", "data-layout-key", "function bindLayoutInteractions", "function headlineClass", "function zipFiles", "ClipboardItem"):
+            for text in ("PennyScribe Skills", "导读与摘要", "金句", "阅读全文", "X 素材", "小红书素材", "标题与文案", "卡片编辑", "第一段完整内容。", "卡片标题", "导出全部卡片", "复制文字", "复制卡片", "自由排版", "重置排版", "隐藏页码", "当前内容块", "文字颜色", "重置此块", "data-layout-key", "data-typography-key", "function bindTypographyInteractions", "function bindLayoutInteractions", "function headlineClass", "function zipFiles", "ClipboardItem"):
                 self.assertIn(text, html)
+            self.assertLess(html.index("导读与摘要"), html.index("小红书素材"))
+            self.assertIn('class="view active" id="view-xhs"', html)
+            self.assertIn('class="xhs-pane active" id="xhs-pane-cards"', html)
+            self.assertIn('aria-label="在 GitHub 查看 PennyScribe Skills"', html)
+            self.assertIn('href="https://github.com/YeDaxia/pennyscribe-skills"', html)
+            self.assertIn('class="card-style-tools" aria-label="卡片字体设置"', html)
+            self.assertIn('type="range" min="24" max="76"', html)
+            self.assertIn('.cards.layout-mode .card-style-tools{display:grid', html)
+            self.assertIn("typography[`${key}_color`]", html)
             for theme in ("手绘涂鸦", "新粗野主义", "剪纸风格", "中世纪现代", "无障碍设计", "漫画书", "包豪斯", "杂志排版", "复古未来主义", "扁平风格"):
                 self.assertIn(theme, html)
             for css in ("theme-visual-neo-brutalism:before{left:auto", "theme-visual-paper-cutout:after{content:none}", "theme-retro-mid-century:before{left:auto", "Centered composition pass", "Natural headline flow", "text-wrap:pretty", "theme-visual-hand-drawn:before{bottom:auto;width:auto}", "theme-visual-accessibility.card-cover:after{left:auto", "theme-visual-comic-book:before{left:auto", "theme-retro-bauhaus:before{left:auto", "theme-layout-magazine.card-cover .body{max-width:100%", "theme-retro-futurism:before{left:48px", "theme-core-flat-design:before{left:auto", "text-wrap:balance"):

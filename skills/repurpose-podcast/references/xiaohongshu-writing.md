@@ -39,8 +39,6 @@ The built-in themes translate ten reusable design languages into static social c
 
 Choose one theme based on tone and keep it consistent within a set. `layout-magazine` is the safest content-first default for dense three-paragraph cards; `visual-accessibility` is the safest maximum-readability option. Do not use interaction-led UI styles for exported images. Use the episode cover only when it is available and legally exposed by the source page. Never imply AI-generated decoration is an original episode image.
 
-Each built-in theme has its own compact side marker beside the headline. Treat that marker as part of the composition, not metadata: keep the wording generic, short, and stylistically native to the theme. Do not replace it with channel information or repeat the episode title inside it.
-
 ## Card system
 
 - Use a 3:4 canvas at 1080×1440 export resolution with generous safe margins.
@@ -51,7 +49,7 @@ Each built-in theme has its own compact side marker beside the headline. Treat t
 - Do not show the podcast channel, show name, creator, URL, or generic watermark on card artwork.
 - Use typography, rules, shapes, and whitespace intentionally. Avoid decorative clutter and tiny body text.
 - Keep text inside a visually centered, approximately symmetric safe area. Reserve edge zones for theme decoration and never let decorative outlines, shadows, or shapes intersect the headline.
-- Avoid accidental orphans, but do not force every headline into equal-length lines. Expressive themes may use an intentionally smaller, longer lead line and a larger, shorter concluding line, with a compact editorial badge occupying the remaining side space. Preserve at least 24px of visual separation between the headline and body block.
+- Let headlines use the full safe-area width and wrap naturally by phrase. Scale short cover headlines down just enough to fill that width in one line; let longer titles wrap without artificial side columns. Avoid accidental orphans, forced equal-length lines, and auxiliary badges or color blocks beside the headline. Preserve at least 24px of visual separation between the headline and body block.
 - Use no more than two large material/background layers. A cover supporting hook should be one clear container, not nested colored boxes.
 
 ## Grounding

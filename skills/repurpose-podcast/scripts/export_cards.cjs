@@ -7,11 +7,14 @@ const { spawnSync } = require('child_process');
 function fail(message) { console.error(message); process.exit(2); }
 const input = process.argv[2];
 if (!input || input === '--help' || input === '-h') {
-  console.log('Usage: node export_cards.cjs <index.html> --output-dir <directory>');
+  console.log('Usage: node export_cards.cjs <index.html> --output-dir <directory> [--theme <theme-id>]');
   process.exit(input ? 0 : 2);
 }
 const flag = process.argv.indexOf('--output-dir');
 if (flag < 0 || !process.argv[flag + 1]) fail('--output-dir is required');
+const themeFlag = process.argv.indexOf('--theme');
+const requestedTheme = themeFlag >= 0 ? process.argv[themeFlag + 1] : null;
+if (themeFlag >= 0 && !requestedTheme) fail('--theme requires a theme id');
 let playwright;
 try { playwright = require('playwright'); } catch { fail('Playwright is required. Install it with: npm install playwright && npx playwright install chromium'); }
 
@@ -29,6 +32,11 @@ try { playwright = require('playwright'); } catch { fail('Playwright is required
   const cards = page.locator('.xhs-card');
   const count = await cards.count();
   if (count < 4 || count > 8) fail(`Xiaohongshu requires 4–8 cards; found ${count}`);
+  if (requestedTheme) {
+    const option = page.locator(`#theme option[value="${requestedTheme}"]`);
+    if (await option.count() !== 1) fail(`Unknown theme: ${requestedTheme}`);
+    await page.locator('#theme').selectOption(requestedTheme);
+  }
   const selectedTheme = await page.locator('#theme').evaluate(node => node.value);
   const themes = await page.locator('#theme option').evaluateAll(nodes => nodes.map(node => node.value));
   for (const theme of themes) {

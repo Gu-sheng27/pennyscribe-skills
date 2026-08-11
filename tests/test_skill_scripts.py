@@ -196,7 +196,7 @@ class SkillScriptTests(unittest.TestCase):
                 self.assertIn(text, html)
             for theme in ("手绘涂鸦", "新粗野主义", "剪纸风格", "中世纪现代", "无障碍设计", "漫画书", "包豪斯", "杂志排版", "复古未来主义", "扁平风格"):
                 self.assertIn(theme, html)
-            for css in ("theme-visual-neo-brutalism:before{left:auto", "theme-visual-paper-cutout:after{content:none}", "theme-retro-mid-century:before{left:auto", "text-wrap:balance"):
+            for css in ("theme-visual-neo-brutalism:before{left:auto", "theme-visual-paper-cutout:after{content:none}", "theme-retro-mid-century:before{left:auto", "Centered composition pass", "theme-visual-hand-drawn:before{bottom:auto;width:auto}", "theme-visual-accessibility.card-cover:after{left:auto", "theme-visual-comic-book:before{left:auto", "theme-retro-bauhaus:before{left:auto", "theme-layout-magazine.card-cover .body{max-width:100%", "theme-retro-futurism:before{left:48px", "theme-core-flat-design:before{left:auto", "text-wrap:balance"):
                 self.assertIn(css, html)
             self.assertIn("function cardParagraphs", html)
             self.assertNotIn("__PROJECT_DATA__", html)
